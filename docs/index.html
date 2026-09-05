@@ -190,6 +190,7 @@
     <button id="ruleFormat" aria-pressed="true">3 sets</button>
     <button id="ruleAwake" aria-pressed="false" hidden>Écran allumé</button>
     <button id="ruleNotify" aria-pressed="false" hidden>Notifs montre</button>
+    <button id="ruleRemote" aria-pressed="false" hidden>Boutons montre (essai)</button>
   </div>
   <p class="hint">
     Touchez une moitie de l'ecran pour marquer.
@@ -637,6 +638,7 @@
 
     setClass($('undoText'), 'btn-text', engine.canUndo(m) ? '' : 'btn-text-off');
     applyStatus(m, status);
+    paintRemoteScore();
   }
 
   function applyStatus(m, status) {
@@ -760,11 +762,15 @@
       lock.addEventListener('release', function () { wakeLock = null; paintWakeButton(); });
       paintWakeButton();
   paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
     }, function () {
       // Refus definitif pour cette page : on cesse de demander.
       wakeWanted = false;
       paintWakeButton();
   paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
     });
   }
 
@@ -772,6 +778,8 @@
     if (wakeLock) { wakeLock.release(); wakeLock = null; }
     paintWakeButton();
   paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
   }
 
   document.addEventListener('visibilitychange', function () {
@@ -817,9 +825,13 @@
     navigator.serviceWorker.register('sw.js').then(function (reg) {
       swReg = reg;
       paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
     }, function () {
       // file://, page embarquee, pas de HTTPS : on s'en passe silencieusement
       paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
     });
   }
 
@@ -842,6 +854,8 @@
       notifWanted = !notifWanted;
       try { localStorage.setItem(NOTIF_KEY, notifWanted ? '1' : '0'); } catch (e) { /* ignore */ }
       paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
       if (notifWanted) notify('Notifications activées');
       return;
     }
@@ -849,8 +863,128 @@
       notifWanted = result === 'granted';
       try { localStorage.setItem(NOTIF_KEY, notifWanted ? '1' : '0'); } catch (e) { /* ignore */ }
       paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
       if (notifWanted) notify('Notifications activées');
     });
+  });
+
+  /* --- marquer depuis la montre -------------------------------------
+     Seul canal montre -> telephone qui ne demande rien d'installe : les
+     commandes musique. La montre les envoie a l'iPhone via AMS, iOS les
+     route vers l'application qui tient la lecture en cours, et une page web
+     les recoit par l'API MediaSession.
+
+       piste suivante   -> point pour NOUS
+       piste precedente -> point pour EUX
+
+     En retour, le titre de la lecture en cours porte le score : l'ecran
+     musique de la montre devient un tableau d'affichage.
+
+     Conditions : la page doit tenir la lecture en cours, donc jouer un son.
+     Un flux quasi silencieux suffit, mais iOS le coupe si le telephone est
+     en mode silencieux ou si l'ecran se verrouille — d'ou le maintien de
+     l'ecran allume. C'est experimental, et signale comme tel. --- */
+  var REMOTE_KEY = 'padel.remote.v1';
+  var remoteWanted = false;
+  var silence = null;
+
+  try {
+    remoteWanted = localStorage.getItem(REMOTE_KEY) === '1';
+  } catch (e) { /* mode prive */ }
+
+  function remoteSupported() {
+    return 'mediaSession' in navigator && typeof navigator.mediaSession.setActionHandler === 'function';
+  }
+
+  /** Un flux d'une seconde, boucle, a un niveau inaudible mais non nul :
+      iOS ignore l'attribut volume, la discretion doit venir des echantillons. */
+  function silentLoopUrl() {
+    var rate = 8000, samples = rate;
+    var buffer = new ArrayBuffer(44 + samples * 2);
+    var view = new DataView(buffer);
+    var ascii = function (offset, text) {
+      for (var i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+    };
+    ascii(0, 'RIFF');
+    view.setUint32(4, 36 + samples * 2, true);
+    ascii(8, 'WAVEfmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);          // PCM
+    view.setUint16(22, 1, true);          // mono
+    view.setUint32(24, rate, true);
+    view.setUint32(28, rate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    ascii(36, 'data');
+    view.setUint32(40, samples * 2, true);
+    for (var i = 0; i < samples; i++) view.setInt16(44 + i * 2, i % 2 ? 1 : -1, true);
+    return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+  }
+
+  function paintRemoteButton() {
+    var el = $('ruleRemote');
+    el.hidden = !remoteSupported();
+    el.setAttribute('aria-pressed', String(remoteWanted));
+  }
+
+  /** Le titre de la lecture en cours porte le score, relu par la montre. */
+  function paintRemoteScore() {
+    if (!remoteWanted || !remoteSupported() || !window.MediaMetadata) return;
+    var m = match;
+    if (!m) return;                    // appelé avant le chargement du match
+    var teams = m.config.teams;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: m.finished
+          ? 'Victoire ' + teams[m.winner]
+          : engine.pointLabel(m, 0) + ' - ' + engine.pointLabel(m, 1),
+        artist: teams[0] + ' ' + m.games[0] + ' · ' + m.games[1] + ' ' + teams[1],
+        album: 'Sets ' + m.sets[0] + ' - ' + m.sets[1]
+      });
+    } catch (e) { /* metadonnees refusees */ }
+  }
+
+  function startRemote() {
+    if (!remoteSupported()) return;
+    if (!silence) {
+      silence = new Audio(silentLoopUrl());
+      silence.loop = true;
+      silence.preload = 'auto';
+    }
+    var resume = function () { silence.play().catch(function () { /* geste requis */ }); };
+    resume();   // échoue tant qu'aucun geste n'a eu lieu ; repris dans flash()
+    var handlers = {
+      nexttrack: function () { addPoint(0); },
+      previoustrack: function () { addPoint(1); },
+      play: resume,
+      pause: resume            // la montre ne doit pas pouvoir couper le canal
+    };
+    // Ne pas déclarer seekforward/seekbackward : iOS remplace alors les
+    // boutons piste suivante/précédente par des sauts de 10 secondes.
+    for (var action in handlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handlers[action]);
+      } catch (e) { /* action inconnue de ce navigateur */ }
+    }
+    window.__padelRemote = handlers;   // point d'entrée pour les tests
+    paintRemoteScore();
+  }
+
+  function stopRemote() {
+    if (silence) silence.pause();
+    if (!remoteSupported()) return;
+    ['nexttrack', 'previoustrack', 'play', 'pause'].forEach(function (action) {
+      try { navigator.mediaSession.setActionHandler(action, null); } catch (e) { /* ignore */ }
+    });
+    window.__padelRemote = null;
+  }
+
+  $('ruleRemote').addEventListener('click', function () {
+    remoteWanted = !remoteWanted;
+    try { localStorage.setItem(REMOTE_KEY, remoteWanted ? '1' : '0'); } catch (e) { /* ignore */ }
+    paintRemoteButton();
+    if (remoteWanted) startRemote(); else stopRemote();
   });
 
   /* --- reglages hors montre --- */
@@ -867,6 +1001,10 @@
 
   function flash(el) {
     acquireWake();
+    // Les navigateurs n'autorisent le son qu'après un geste : c'en est un.
+    if (remoteWanted && silence && silence.paused) {
+      silence.play().catch(function () { /* refus persistant */ });
+    }
     el.classList.add('tapped');
     setTimeout(function () { el.classList.remove('tapped'); }, 130);
   }
@@ -899,6 +1037,8 @@
 
   paintWakeButton();
   paintNotifButton();
+  paintRemoteButton();
+  if (remoteWanted) startRemote();
 
   match = load();
   if (match) {

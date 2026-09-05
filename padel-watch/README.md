@@ -102,6 +102,42 @@ Padel — Match NOUS · 2-1
 Les notifications portent toutes la même étiquette : la montre en affiche une
 seule, remplacée à chaque fois, au lieu d'en empiler quinze.
 
+### Marquer depuis la montre (expérimental)
+
+Le sens inverse existe aussi, par un seul canal : **les commandes musique**.
+La montre les envoie à l'iPhone via AMS, iOS les route vers l'application qui
+tient la lecture en cours, et une page web les reçoit par l'API MediaSession.
+
+```
+piste suivante    ->  point pour NOUS
+piste précédente  ->  point pour EUX
+```
+
+En retour, le titre de la lecture en cours porte le score : l'écran musique de
+la montre devient un tableau d'affichage.
+
+```
+0 - 15                 (titre)
+NOUS 1 · 0 EUX         (artiste)
+Sets 0 - 0             (album)
+```
+
+À activer par `REGLAGES → Boutons montre (essai)`, puis ouvrir l'écran musique
+de la montre.
+
+**Ses conditions, qui sont réelles.** La page doit tenir la lecture en cours,
+donc jouer un son — un flux d'une seconde à un niveau inaudible, généré à la
+volée, iOS ignorant l'attribut `volume`. Or iOS coupe l'audio web si le
+téléphone est en **mode silencieux** ou si l'**écran se verrouille**, d'où le
+maintien de l'écran allumé. Et cela prend la main sur la lecture en cours : la
+musique s'arrête. À réserver au match, pas à l'échauffement en musique.
+
+Vérifié en navigateur : les quatre gestionnaires se posent, quatre « suivant »
+donnent bien un jeu, « précédent » marque pour l'adversaire, les métadonnées
+suivent le score et le réglage survit à un rechargement. Non testé sur
+appareil — les contournements audio d'iOS ont une réputation d'irrégularité,
+c'est le point à éprouver sur le terrain.
+
 ### Publier la page pour que ça marche
 
 iOS n'autorise les notifications web que depuis une page **ajoutée à l'écran
