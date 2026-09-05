@@ -555,8 +555,8 @@
      route vers l'application qui tient la lecture en cours, et une page web
      les recoit par l'API MediaSession.
 
-       piste suivante   -> point pour NOUS
-       piste precedente -> point pour EUX
+       piste precedente (bouton de gauche)  -> point pour NOUS
+       piste suivante   (bouton de droite)  -> point pour EUX
 
      En retour, le titre de la lecture en cours porte le score : l'ecran
      musique de la montre devient un tableau d'affichage.
@@ -634,9 +634,12 @@
     }
     var resume = function () { silence.play().catch(function () { /* geste requis */ }); };
     resume();   // échoue tant qu'aucun geste n'a eu lieu ; repris dans flash()
+    // Les boutons doivent correspondre aux colonnes du tableau de score :
+    // ⏮ est à gauche sur l'écran musique, donc il marque pour l'équipe de
+    // gauche ; ⏭ est à droite, il marque pour celle de droite.
     var handlers = {
-      nexttrack: function () { addPoint(0); },
-      previoustrack: function () { addPoint(1); },
+      previoustrack: function () { note(null, 'MONTRE précédent (gauche)', 0); addPoint(0); },
+      nexttrack: function () { note(null, 'MONTRE suivant (droite)', 1); addPoint(1); },
       play: resume,
       pause: resume            // la montre ne doit pas pouvoir couper le canal
     };

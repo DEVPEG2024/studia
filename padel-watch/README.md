@@ -130,9 +130,13 @@ La montre les envoie à l'iPhone via AMS, iOS les route vers l'application qui
 tient la lecture en cours, et une page web les reçoit par l'API MediaSession.
 
 ```
-piste suivante    ->  point pour NOUS
-piste précédente  ->  point pour EUX
+piste précédente  (bouton de gauche)  ->  point pour NOUS   (colonne de gauche)
+piste suivante    (bouton de droite)  ->  point pour EUX    (colonne de droite)
 ```
+
+Les deux boutons suivent la position des colonnes à l'écran. L'inverse
+paraît arbitraire au poignet : on appuie à droite et le chiffre de gauche
+monte.
 
 En retour, le titre de la lecture en cours porte le score : l'écran musique de
 la montre devient un tableau d'affichage.
