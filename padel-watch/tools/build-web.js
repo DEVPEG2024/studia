@@ -115,9 +115,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache d'abord : le compteur doit marcher sur un terrain sans réseau.
+// La page elle-même : réseau d'abord, cache en secours. Sans cela une mise à
+// jour n'apparaît qu'au lancement suivant. Le reste : cache d'abord, pour que
+// le compteur démarre sur un terrain sans réseau.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const isPage = event.request.mode === 'navigate' ||
+    event.request.destination === 'document';
+
+  if (isPage) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((c) => c.put(event.request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((hit) => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(caches.match(event.request).then((hit) => hit || fetch(event.request)));
 });
 
