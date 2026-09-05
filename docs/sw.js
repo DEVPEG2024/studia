@@ -1,5 +1,5 @@
 /* Service worker du compteur Padel — généré par tools/build-web.js */
-const CACHE = 'padel-c321ab392b56';
+const CACHE = 'padel-f1cc142aa8c2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {

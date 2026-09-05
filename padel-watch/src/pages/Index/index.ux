@@ -16,7 +16,10 @@
           <text class="team {{ teamClassA }}">{{ teamA }}</text>
           <text class="sets {{ setsClassA }}">{{ setsA }}</text>
         </div>
-        <text class="serve serve-a">{{ serveA }}</text>
+        <div class="serve">
+          <div class="spot {{ spotLeftA }}"></div>
+          <div class="spot {{ spotRightA }}"></div>
+        </div>
         <text class="point {{ pointClassA }}">{{ pointA }}</text>
         <div class="games" show="{{ !finished }}">
           <text class="games-n">{{ gamesA }}</text>
@@ -31,7 +34,10 @@
           <text class="team {{ teamClassB }}">{{ teamB }}</text>
           <text class="sets {{ setsClassB }}">{{ setsB }}</text>
         </div>
-        <text class="serve serve-b">{{ serveB }}</text>
+        <div class="serve">
+          <div class="spot {{ spotLeftB }}"></div>
+          <div class="spot {{ spotRightB }}"></div>
+        </div>
         <text class="point {{ pointClassB }}">{{ pointB }}</text>
         <div class="games" show="{{ !finished }}">
           <text class="games-n">{{ gamesB }}</text>
@@ -148,17 +154,28 @@
 .sn-b { color: #57b0ff; }
 .sn-on { color: #0a1018; }
 
-/* Ligne de service : presente des deux cotes meme vide, sinon les deux gros
-   scores ne seraient plus alignes. */
+/* Les deux emplacements de service, et la balle sur celui d'ou l'on engage.
+   Vela n'a ni position absolue ni pseudo-elements : ce sont deux vraies
+   pastilles, l'une pleine, l'autre en anneau. La piste occupe sa place des
+   deux cotes meme vide, sinon les deux gros scores se desaligneraient. */
 .serve {
-  height: 16px;
-  font-size: 11px;
-  font-weight: bold;
-  text-align: center;
-  width: 100%;
+  height: 18px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
-.serve-a { color: #e4f24a; }
-.serve-b { color: #57b0ff; }
+.spot {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  margin-left: 5px;
+  margin-right: 5px;
+  border-width: 1px;
+  border-color: #0a1018;
+}
+.sp-vide { border-color: #22303f; }
+.sp-a { background-color: #e4f24a; border-color: #e4f24a; }
+.sp-b { background-color: #57b0ff; border-color: #57b0ff; }
 
 .point {
   font-size: 104px;
@@ -268,8 +285,10 @@ export default {
     teamClassB: '',
     plateClassA: '',
     plateClassB: '',
-    serveA: '',
-    serveB: '',
+    spotLeftA: '',
+    spotRightA: '',
+    spotLeftB: '',
+    spotRightB: '',
     pointA: '0',
     pointB: '0',
     gamesA: '0',
@@ -391,9 +410,11 @@ export default {
     this.setsClassB = servingB ? 'sn-on' : 'sn-b'
 
     // On engage a droite en debut de jeu, puis on alterne a chaque point.
-    const cote = engine.servingCourt(m) === 'right' ? 'DROITE' : 'GAUCHE'
-    this.serveA = servingA ? 'SERVICE ' + cote : ''
-    this.serveB = servingB ? 'SERVICE ' + cote : ''
+    const aDroite = engine.servingCourt(m) === 'right'
+    this.spotLeftA = servingA ? (aDroite ? 'sp-vide' : 'sp-a') : ''
+    this.spotRightA = servingA ? (aDroite ? 'sp-a' : 'sp-vide') : ''
+    this.spotLeftB = servingB ? (aDroite ? 'sp-vide' : 'sp-b') : ''
+    this.spotRightB = servingB ? (aDroite ? 'sp-b' : 'sp-vide') : ''
 
     if (m.finished) {
       // Points et jeux sont remis a zero : on affiche les sets gagnes.

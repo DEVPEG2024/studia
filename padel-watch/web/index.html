@@ -155,17 +155,43 @@
   .half-a .sets.won { border-color: rgba(228, 242, 74, .55); color: var(--ball); }
   .half-b .sets.won { border-color: rgba(87, 176, 255, .55); color: var(--glass); }
 
-  /* Ligne de service. Elle occupe sa place des deux cotes, meme vide, sinon
-     les deux gros scores ne seraient plus alignes. */
+  /* Les deux emplacements de service, et la balle sur celui d'où l'on engage.
+     Un rail continu ferait curseur de réglage ; deux marques font un terrain.
+     La piste occupe sa place des deux côtés même vide, sinon les deux gros
+     scores se désaligneraient. */
   .serve {
-    height: 14px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .18em;
-    white-space: nowrap;
+    position: relative;
+    width: 58px;
+    height: 16px;
+    opacity: 0;
   }
-  .serve-a { color: var(--ball); }
-  .serve-b { color: var(--glass); }
+  .serve.on { opacity: 1; }
+  .serve::before,
+  .serve::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+  }
+  .serve::before { left: 0; }
+  .serve::after { right: 0; }
+  .ball {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    border-radius: 50%;
+    transition: left .3s cubic-bezier(.34, 1.4, .5, 1);
+  }
+  .serve.court-right .ball { left: calc(100% - 14px); }
+  .serve-a .ball { background: var(--ball); }
+  .serve-b .ball { background: var(--glass); }
 
   .point {
     font-size: 96px;
@@ -323,7 +349,10 @@
     .phase   { font-size: 2.9vmin; }
     .history { font-size: 3vmin; }
     .team    { font-size: 3.2vmin; }
-    .serve   { font-size: 2.5vmin; height: 3.6vmin; }
+    .serve   { height: 4.4vmin; width: 15vmin; }
+    .serve::before, .serve::after,
+    .ball    { width: 3.6vmin; height: 3.6vmin; margin-top: -1.8vmin; }
+    .serve.court-right .ball { left: calc(100% - 3.6vmin); }
     .sets    { font-size: 3.2vmin; min-width: 5.4vmin; }
     .point   { font-size: 25vmin; }
     .games-n { font-size: 7vmin; }
@@ -367,7 +396,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .half::after, .panel { transition: none; }
+    .half::after, .panel, .ball { transition: none; }
   }
 
   kbd {
@@ -391,7 +420,7 @@
   <div class="court">
     <div class="half half-a" id="sideA">
       <div class="plate"><span class="team" id="teamA">NOUS</span><span class="sets" id="setsA">0</span></div>
-      <div class="serve serve-a" id="serveA"></div>
+      <div class="serve serve-a" id="serveA" aria-label="côté de service"><span class="ball"></span></div>
       <div class="point pt-a" id="pointA">0</div>
       <div class="games" id="gameboxA"><span class="games-n" id="gamesA">0</span><span class="games-l">JEUX</span></div>
     </div>
@@ -400,7 +429,7 @@
 
     <div class="half half-b" id="sideB">
       <div class="plate"><span class="team" id="teamB">EUX</span><span class="sets" id="setsB">0</span></div>
-      <div class="serve serve-b" id="serveB"></div>
+      <div class="serve serve-b" id="serveB" aria-label="côté de service"><span class="ball"></span></div>
       <div class="point pt-b" id="pointB">0</div>
       <div class="games" id="gameboxB"><span class="games-n" id="gamesB">0</span><span class="games-l">JEUX</span></div>
     </div>
@@ -507,9 +536,13 @@
     var servingB = !m.finished && server === 1;
     $('sideA').classList.toggle('serving', servingA);
     $('sideB').classList.toggle('serving', servingB);
-    var cote = engine.servingCourt(m) === 'right' ? 'DROITE' : 'GAUCHE';
-    $('serveA').textContent = servingA ? 'SERVICE ' + cote : '';
-    $('serveB').textContent = servingB ? 'SERVICE ' + cote : '';
+    var aDroite = engine.servingCourt(m) === 'right';
+    var piste = aDroite ? ' court-right' : '';
+    setClass($('serveA'), 'serve serve-a', (servingA ? 'on' : '') + piste);
+    setClass($('serveB'), 'serve serve-b', (servingB ? 'on' : '') + piste);
+    var dit = 'service ' + (aDroite ? 'à droite' : 'à gauche');
+    $('serveA').setAttribute('aria-label', servingA ? dit : '');
+    $('serveB').setAttribute('aria-label', servingB ? dit : '');
 
     setClass($('undoText'), 'btn-text', engine.canUndo(m) ? '' : 'btn-text-off');
     applyStatus(m, status);

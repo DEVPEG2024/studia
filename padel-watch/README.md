@@ -41,8 +41,10 @@ espacées pour les étiquettes.
   EUX. Rien d'autre à viser en plein match.
 - **Gros chiffres** : le point courant occupe la moitié de la dalle, lisible à
   bout de bras entre deux échanges.
-- **Point de service** : une pastille de couleur indique l'équipe au service,
-  y compris pendant le jeu décisif (rotation 1 point puis 2).
+- **La balle dit le service.** Elle n'apparaît que dans le camp qui sert et
+  se pose sur l'un des deux emplacements d'engagement : à droite en début de
+  jeu, puis elle traverse à chaque point. L'autre emplacement reste un anneau
+  vide. Deux marques plutôt qu'un rail continu, qui ferait curseur de réglage.
 - **Alertes** : `BALLE DE JEU` / `BALLE DE SET` / `BALLE DE MATCH`,
   `POINT EN OR` à 40-40, et `CHANGEMENT DE COTE` au bon moment. En mode
   avantages, `ÉGALITÉ` et `AVANTAGE NOUS` / `AVANTAGE EUX` : sans ce libellé,
