@@ -168,21 +168,36 @@ dans Mi Fitness, `À propos de l'appareil`.
 > machine : les identifiants ne passent par aucun tiers. Éviter les équivalents
 > en ligne, qui demandent le mot de passe du compte à un site inconnu.
 
-#### Étape 2 — installer (n'importe quel Android, une quinzaine de minutes)
+#### Étape 2 — installer (n'importe quel Android emprunté, ~20 minutes)
 
-Un téléphone emprunté suffit ; il n'est ni appairé à la montre ni lié au
-compte, il sert seulement de radio Bluetooth pilotable.
+Le téléphone n'est ni appairé à la montre ni lié au compte : il sert de radio
+Bluetooth pilotable, le temps du transfert.
 
-1. Installer **Gadgetbridge** depuis F-Droid.
-2. Lancer la recherche d'appareils, appui long sur la montre → `Auth key`,
-   y coller la clé de l'étape 1 (`0x…` compris).
-3. Se connecter à la montre.
-4. `App Manager` → installer le fichier `dist/*.rpk` de ce dépôt.
+**Outil retenu : Notify for Xiaomi** (Play Store, `com.mc.xiaomi1`). La
+Redmi Watch 4 figure explicitement dans ses appareils pris en charge, et il
+expose une commande dédiée à l'installation d'un `.rpk`.
 
-Ce qui peut coincer : le support des Redmi Watch dans Gadgetbridge est marqué
-expérimental, le gestionnaire d'applications RPK y est récent, et je n'ai pas
-trouvé de confirmation pour la Watch 4 précisément. L'étape 1 ne coûte rien et
-se fait tout de suite ; l'étape 2 est celle à tester.
+1. Copier `dist/com.padel.compteur.debug.1.0.0.rpk` sur le téléphone
+   (courriel, Drive, câble — peu importe).
+2. Installer **Notify for Xiaomi**, puis lui donner la clé de l'étape 1
+   pendant l'assistant d'appairage. L'application sait aussi la récupérer
+   seule via un bouton `Get`, mais cela suppose de lui confier les
+   identifiants du compte Xiaomi : coller la clé obtenue à l'étape 1 évite
+   ce détour.
+3. Connecter la montre depuis Notify. Mi Fitness perd la connexion pendant
+   ce temps — c'est normal, une seule application peut parler à la montre à
+   la fois, et le lien avec l'iPhone n'est pas rompu pour autant.
+4. `Device` → `firmware update` → `Third party app` → choisir le `.rpk`.
+5. Fermer Notify et resynchroniser la montre avec Mi Fitness sur l'iPhone.
+
+**Repli : Gadgetbridge** (libre, F-Droid), qui prend aussi en charge les
+montres Xiaomi « protobuf » dont la Redmi Watch 4 : appui long sur l'appareil
+→ `Auth key` → coller la clé, puis `App Manager` → installer le `.rpk`. Son
+support est marqué récent et expérimental, et son gestionnaire RPK plus jeune
+que celui de Notify — d'où le second rang.
+
+Dans les deux cas, la règle est la même : **ne jamais dissocier la montre**,
+sous peine d'invalider la clé et de tout réinitialiser.
 
 > **Non vérifié sur appareil.** Le projet compile avec la chaîne officielle
 > Xiaomi et produit un `.rpk` Vela signé ; le moteur de score est couvert par
