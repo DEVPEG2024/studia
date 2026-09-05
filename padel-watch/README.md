@@ -179,15 +179,17 @@ monte.
 En retour, le titre de la lecture en cours porte le score : l'écran musique de
 la montre devient un tableau d'affichage.
 
-L'écran musique montre le titre en grand, l'artiste dessous, l'album parfois.
-On y range donc le point, puis les jeux et le service, puis les sets et la
-phase — le plus utile d'abord sur chaque ligne.
+Au poignet, le score et rien d'autre : le point en grand, les jeux dessous,
+une troisième ligne seulement quand la phase change la façon de compter.
 
 ```
-40 - 30                    (titre, en grand)
-Jeux 5-4 · Service EUX     (artiste)
-Sets 1-0 · Set 2           (album)
+40 - 30            (titre, en grand)
+Jeux 5-4           (artiste ; « · Sets 1-0 » dès le premier set joué)
+                   (album : vide, sauf « Jeu decisif » ou « Super tie-break »)
 ```
+
+Le service, lui, reste sur le téléphone, où le camp qui sert s'éclaire et où
+la place ne manque pas. Une montre lue en une seconde n'a pas à être décodée.
 
 À activer par `REGLAGES → Boutons montre (essai)`, puis ouvrir l'écran musique
 de la montre.

@@ -835,13 +835,14 @@
     var m = match;
     if (!m) return;                    // appelé avant le chargement du match
     var teams = m.config.teams;
-    // L'ecran musique affiche le titre en grand, l'artiste dessous, l'album
-    // parfois. On y range donc le point, puis les jeux et le service, puis
-    // les sets et la phase.
-    var phase = m.finished ? 'Match termine'
-      : m.superTieBreak ? 'Super tie-break'
+    // Au poignet, le score et rien d'autre : la montre affiche le point, les
+    // jeux en dessous, et une troisieme ligne seulement quand la phase change
+    // la facon de compter. Le service reste sur le telephone, ou le camp au
+    // service s'eclaire et ou la place ne manque pas.
+    var joue = m.sets[0] + m.sets[1] > 0;
+    var phase = m.superTieBreak ? 'Super tie-break'
       : m.tieBreak ? 'Jeu decisif'
-      : 'Set ' + engine.currentSetNumber(m);
+      : '';
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: m.finished
@@ -850,10 +851,8 @@
         artist: m.finished
           ? engine.setSummary(m).join(' · ')
           : 'Jeux ' + m.games[0] + '-' + m.games[1] +
-            ' · Service ' + teams[engine.currentServer(m)],
-        album: (m.sets[0] + m.sets[1] > 0
-          ? 'Sets ' + m.sets[0] + '-' + m.sets[1] + ' · '
-          : '') + phase
+            (joue ? ' · Sets ' + m.sets[0] + '-' + m.sets[1] : ''),
+        album: phase
       });
     } catch (e) { /* metadonnees refusees */ }
   }
