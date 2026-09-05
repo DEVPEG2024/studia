@@ -20,9 +20,9 @@
           <div class="spot {{ spotLeftA }}"></div>
           <div class="spot {{ spotRightA }}"></div>
         </div>
-        <text class="point {{ pointClassA }}">{{ pointA }}</text>
+        <text class="point {{ pointClassA }} {{ pointAnimA }}">{{ pointA }}</text>
         <div class="games" show="{{ !finished }}">
-          <text class="games-n">{{ gamesA }}</text>
+          <text class="games-n {{ gamesAnimA }}">{{ gamesA }}</text>
           <text class="games-l">JEUX</text>
         </div>
       </div>
@@ -38,9 +38,9 @@
           <div class="spot {{ spotLeftB }}"></div>
           <div class="spot {{ spotRightB }}"></div>
         </div>
-        <text class="point {{ pointClassB }}">{{ pointB }}</text>
+        <text class="point {{ pointClassB }} {{ pointAnimB }}">{{ pointB }}</text>
         <div class="games" show="{{ !finished }}">
-          <text class="games-n">{{ gamesB }}</text>
+          <text class="games-n {{ gamesAnimB }}">{{ gamesB }}</text>
           <text class="games-l">JEUX</text>
         </div>
       </div>
@@ -184,6 +184,26 @@
   width: 100%;
   height: 128px;
 }
+/* Le point marque atterrit, le compteur de jeux prend le relais quand le
+   point retombe a zero. Syntaxe longue et from/to : c'est ce que la demo
+   officielle Vela demontre, les pourcentages ne sont pas garantis. */
+.pt-land {
+  animation-name: land;
+  animation-duration: 240ms;
+}
+@keyframes land {
+  from { transform: scale(0.78); opacity: 0.5; }
+  to { transform: scale(1); opacity: 1; }
+}
+.gm-pop {
+  animation-name: pop;
+  animation-duration: 460ms;
+}
+@keyframes pop {
+  from { transform: scale(1.45); }
+  to { transform: scale(1); }
+}
+
 .pt-a { color: #e4f24a; }
 .pt-b { color: #57b0ff; }
 .pt-dim { color: #2c3948; }
@@ -295,6 +315,10 @@ export default {
     gamesB: '0',
     pointClassA: 'pt-a',
     pointClassB: 'pt-b',
+    pointAnimA: '',
+    pointAnimB: '',
+    gamesAnimA: '',
+    gamesAnimB: '',
     finished: false,
     statusText: '',
     statusClass: 'sl-none',
@@ -322,6 +346,17 @@ export default {
 
   onDestroy() {
     device.keepScreenOn(false)
+  },
+
+  /**
+   * Relance une animation. Il faut que la classe soit d'abord retiree, sinon
+   * la reposer dans le meme rendu ne la redeclenche pas.
+   */
+  relance(champ, classe, duree) {
+    const self = this
+    self[champ] = ''
+    setTimeout(function () { self[champ] = classe }, 20)
+    setTimeout(function () { self[champ] = '' }, duree + 40)
   },
 
   configFromSettings() {
@@ -355,6 +390,15 @@ export default {
     this.buzz(gameEnded ? 'long' : 'short')
     store.saveMatch(engine.serialize(match))
     this.refresh()
+
+    // On anime ce qui a change : le point qui atterrit, ou le compteur de
+    // jeux quand le point retombe a zero.
+    const cote = team === 0 ? 'A' : 'B'
+    if (gameEnded) {
+      if (!match.finished) this.relance('gamesAnim' + cote, 'gm-pop', 460)
+    } else {
+      this.relance('pointAnim' + cote, 'pt-land', 240)
+    }
   },
 
   undoPoint() {

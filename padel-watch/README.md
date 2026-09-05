@@ -50,6 +50,10 @@ espacées pour les étiquettes.
   avantages, `ÉGALITÉ` et `AVANTAGE NOUS` / `AVANTAGE EUX` : sans ce libellé,
   voir le chiffre adverse retomber de `AV` à `40` après son propre point donne
   l'impression que les côtés sont inversés.
+- **Le geste a un retour.** Le point marqué atterrit — un bref rebond du
+  chiffre, qui confirme le tap sans qu'on ait à regarder. Un jeu gagné
+  illumine le camp d'un halo serré autour du score, plus long quand c'est un
+  set. Tout est coupé si le système demande à réduire les mouvements.
 - **Annulation point par point**, y compris à travers une fin de jeu ou de set.
 - **Vibration** courte sur un point, longue sur un jeu, un set ou le match.
 - **Écran maintenu allumé** pendant la partie (désactivable).

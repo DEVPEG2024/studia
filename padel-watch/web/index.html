@@ -122,6 +122,44 @@
   .half-a.tapped { background: rgba(228, 242, 74, .13); }
   .half-b.tapped { background: rgba(87, 176, 255, .13); }
 
+  /* Un jeu qui bascule mérite plus qu'un chiffre qui change : le camp
+     gagnant s'illumine brièvement. Le halo de service occupe déjà ::after. */
+  .half::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  /* Un halo serré autour du score, pas un lavis sur tout le camp : à pleine
+     intensité, un aplat large noie les chiffres au lieu de les fêter. */
+  .half-a::before { background: radial-gradient(circle at 50% 47%, rgba(228, 242, 74, .20), transparent 52%); }
+  .half-b::before { background: radial-gradient(circle at 50% 47%, rgba(87, 176, 255, .22), transparent 52%); }
+  .half.won-game::before { animation: flash .55s ease-out; }
+  .half.won-set::before { animation: flash .95s ease-out; }
+
+  @keyframes flash {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Le point marqué atterrit : on sent le tap sans avoir à regarder. */
+  @keyframes land {
+    0%   { transform: scale(.8); opacity: .55; }
+    62%  { transform: scale(1.07); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .point.land { animation: land .24s cubic-bezier(.2, 1.4, .4, 1); }
+
+  /* Le compteur de jeux prend le relais quand le point retombe à zéro. */
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  .games-n.pop { display: inline-block; animation: pop .5s cubic-bezier(.2, 1.5, .4, 1); }
+
   /* Le filet : deux montants et une maille, pas un simple trait. */
   .net {
     width: 3px;
@@ -397,6 +435,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .half::after, .panel, .ball { transition: none; }
+    .half::before, .point.land, .games-n.pop { animation: none; }
   }
 
   kbd {
@@ -644,6 +683,18 @@
     if (milestone) notify(milestone.titre, milestone.detail);
     save();
     refresh();
+
+    // On anime ce qui a changé : le point qui atterrit, ou le camp qui
+    // remporte le jeu. Jamais depuis refresh(), qui sert aussi à annuler
+    // un point ou à recharger un match.
+    var cote = team === 0 ? 'A' : 'B';
+    if (!milestone) {
+      replay($('point' + cote), 'land');
+    } else {
+      var jeuSeul = milestone.titre.indexOf('Jeu ') === 0;
+      replay($('side' + cote), jeuSeul ? 'won-game' : 'won-set', ['won-game', 'won-set']);
+      if (!match.finished) replay($('games' + cote), 'pop');
+    }
   }
 
   function undo() {
@@ -1041,6 +1092,17 @@
       document.body.classList.remove('show-rules');
       start();
     });
+  }
+
+  /** Relance une animation. Le recalcul forcé est indispensable : reposer la
+      classe dans la même frame ne la redéclenche pas. `autres` liste les
+      classes concurrentes à retirer, faute de quoi une animation de set
+      resterait accrochée et rejouerait à chaque jeu suivant. */
+  function replay(el, cls, autres) {
+    el.classList.remove(cls);
+    if (autres) autres.forEach(function (c) { el.classList.remove(c); });
+    void el.offsetWidth;
+    el.classList.add(cls);
   }
 
   function flash(el) {
