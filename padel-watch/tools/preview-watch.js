@@ -23,6 +23,7 @@ const SAMPLE = {
   historyText: '6-4 · 3-6',
   teamA: 'NOUS', teamB: 'EUX',
   setsA: '1', setsB: '1',
+  serveA: 'SERVICE DROITE', serveB: '',
   pointA: 'AV', pointB: '40',
   gamesA: '5', gamesB: '4',
   plateClassA: 'pl-a', plateClassB: '',

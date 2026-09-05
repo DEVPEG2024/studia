@@ -155,6 +155,18 @@
   .half-a .sets.won { border-color: rgba(228, 242, 74, .55); color: var(--ball); }
   .half-b .sets.won { border-color: rgba(87, 176, 255, .55); color: var(--glass); }
 
+  /* Ligne de service. Elle occupe sa place des deux cotes, meme vide, sinon
+     les deux gros scores ne seraient plus alignes. */
+  .serve {
+    height: 14px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    white-space: nowrap;
+  }
+  .serve-a { color: var(--ball); }
+  .serve-b { color: var(--glass); }
+
   .point {
     font-size: 96px;
     font-weight: 800;
@@ -311,6 +323,7 @@
     .phase   { font-size: 2.9vmin; }
     .history { font-size: 3vmin; }
     .team    { font-size: 3.2vmin; }
+    .serve   { font-size: 2.5vmin; height: 3.6vmin; }
     .sets    { font-size: 3.2vmin; min-width: 5.4vmin; }
     .point   { font-size: 25vmin; }
     .games-n { font-size: 7vmin; }
@@ -380,6 +393,7 @@
   <div class="court">
     <div class="half half-a" id="sideA">
       <div class="plate"><span class="team" id="teamA">NOUS</span><span class="sets" id="setsA">0</span></div>
+      <div class="serve serve-a" id="serveA"></div>
       <div class="point pt-a" id="pointA">0</div>
       <div class="games" id="gameboxA"><span class="games-n" id="gamesA">0</span><span class="games-l">JEUX</span></div>
     </div>
@@ -388,6 +402,7 @@
 
     <div class="half half-b" id="sideB">
       <div class="plate"><span class="team" id="teamB">EUX</span><span class="sets" id="setsB">0</span></div>
+      <div class="serve serve-b" id="serveB"></div>
       <div class="point pt-b" id="pointB">0</div>
       <div class="games" id="gameboxB"><span class="games-n" id="gamesB">0</span><span class="games-l">JEUX</span></div>
     </div>
@@ -675,6 +690,15 @@
     return (s.tieBreakStartServer + Math.floor((played + 1) / 2)) % 2;
   }
 
+  /**
+   * Cote depuis lequel le service est engage. On sert a droite au debut du
+   * jeu, puis on alterne a chaque point — y compris pendant le jeu decisif.
+   * Retourne 'right' ou 'left', a traduire par l'interface.
+   */
+  function servingCourt(s) {
+    return (s.points[0] + s.points[1]) % 2 === 0 ? 'right' : 'left';
+  }
+
   function pointLabel(s, team) {
     if (s.tieBreak) return String(s.points[team]);
     return POINT_LABELS[s.points[team]];
@@ -782,6 +806,7 @@
     undo: undo,
     canUndo: canUndo,
     currentServer: currentServer,
+    servingCourt: servingCourt,
     pointLabel: pointLabel,
     currentSetNumber: currentSetNumber,
     setSummary: setSummary,
@@ -801,7 +826,7 @@
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
-  var BUILD = 'adfe50e · 2026-09-05 19:34';
+  var BUILD = '9278a2f · 2026-09-05 19:43';
 
   var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
@@ -857,9 +882,15 @@
     $('gameboxA').hidden = m.finished;
     $('gameboxB').hidden = m.finished;
 
-    // Le camp au service s'éclaire.
-    $('sideA').classList.toggle('serving', !m.finished && server === 0);
-    $('sideB').classList.toggle('serving', !m.finished && server === 1);
+    // Le camp au service s'éclaire, et annonce depuis quel côté il engage :
+    // on sert à droite en début de jeu, puis on alterne à chaque point.
+    var servingA = !m.finished && server === 0;
+    var servingB = !m.finished && server === 1;
+    $('sideA').classList.toggle('serving', servingA);
+    $('sideB').classList.toggle('serving', servingB);
+    var cote = engine.servingCourt(m) === 'right' ? 'DROITE' : 'GAUCHE';
+    $('serveA').textContent = servingA ? 'SERVICE ' + cote : '';
+    $('serveB').textContent = servingB ? 'SERVICE ' + cote : '';
 
     setClass($('undoText'), 'btn-text', engine.canUndo(m) ? '' : 'btn-text-off');
     applyStatus(m, status);
@@ -942,7 +973,10 @@
       milestone = {
         titre: 'Jeu ' + who,
         // Tant qu'aucun set n'est joue, l'annoncer 0-0 n'apprend rien.
+        // Au changement de jeu, le service change de camp : c'est le moment
+        // ou l'annoncer sert le plus.
         detail: 'Jeux ' + match.games[0] + '-' + match.games[1] +
+          ' · Service ' + match.config.teams[engine.currentServer(match)] +
           (match.sets[0] + match.sets[1] > 0
             ? ' · Sets ' + match.sets[0] + '-' + match.sets[1]
             : '')
@@ -1223,7 +1257,11 @@
           ? engine.setSummary(m).join(' · ')
           : 'Jeux ' + m.games[0] + '-' + m.games[1] +
             (joue ? ' · Sets ' + m.sets[0] + '-' + m.sets[1] : ''),
-        album: phase
+        album: m.finished
+          ? ''
+          : 'Service ' + teams[engine.currentServer(m)] + ' ' +
+            (engine.servingCourt(m) === 'right' ? 'droite' : 'gauche') +
+            (phase ? ' · ' + phase : '')
       });
     } catch (e) { /* metadonnees refusees */ }
   }

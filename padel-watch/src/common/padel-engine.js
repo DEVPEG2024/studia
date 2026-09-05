@@ -250,6 +250,15 @@
     return (s.tieBreakStartServer + Math.floor((played + 1) / 2)) % 2;
   }
 
+  /**
+   * Cote depuis lequel le service est engage. On sert a droite au debut du
+   * jeu, puis on alterne a chaque point — y compris pendant le jeu decisif.
+   * Retourne 'right' ou 'left', a traduire par l'interface.
+   */
+  function servingCourt(s) {
+    return (s.points[0] + s.points[1]) % 2 === 0 ? 'right' : 'left';
+  }
+
   function pointLabel(s, team) {
     if (s.tieBreak) return String(s.points[team]);
     return POINT_LABELS[s.points[team]];
@@ -357,6 +366,7 @@
     undo: undo,
     canUndo: canUndo,
     currentServer: currentServer,
+    servingCourt: servingCourt,
     pointLabel: pointLabel,
     currentSetNumber: currentSetNumber,
     setSummary: setSummary,

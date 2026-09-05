@@ -279,3 +279,34 @@ test('profondeur d historique configurable a la sauvegarde', () => {
   assert.strictEqual(E.canUndo(E.deserialize(E.serialize(s, 0))), false);
   assert.strictEqual(E.deserialize(E.serialize(s, 3)).history.length, 3);
 });
+
+test('cote de service : droite au depart, puis alternance a chaque point', () => {
+  const s = E.createMatch();
+  assert.strictEqual(E.servingCourt(s), 'right');
+  play(s, '0');
+  assert.strictEqual(E.servingCourt(s), 'left');
+  play(s, '1');
+  assert.strictEqual(E.servingCourt(s), 'right');
+  play(s, '0');
+  assert.strictEqual(E.servingCourt(s), 'left');
+});
+
+test('cote de service : on repart a droite au jeu suivant', () => {
+  const s = E.createMatch();
+  play(s, '000');                       // 40-0, trois points joues
+  assert.strictEqual(E.servingCourt(s), 'left');
+  play(s, '0');                         // jeu gagne, points remis a zero
+  assert.deepStrictEqual(s.games, [1, 0]);
+  assert.strictEqual(E.servingCourt(s), 'right');
+});
+
+test('cote de service : la meme alternance en jeu decisif', () => {
+  const s = E.createMatch();
+  reachTieBreak(s);
+  assert.strictEqual(s.tieBreak, true);
+  assert.strictEqual(E.servingCourt(s), 'right');
+  play(s, '0');
+  assert.strictEqual(E.servingCourt(s), 'left');
+  play(s, '1');
+  assert.strictEqual(E.servingCourt(s), 'right');
+});

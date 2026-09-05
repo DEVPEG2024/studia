@@ -16,6 +16,7 @@
           <text class="team {{ teamClassA }}">{{ teamA }}</text>
           <text class="sets {{ setsClassA }}">{{ setsA }}</text>
         </div>
+        <text class="serve serve-a">{{ serveA }}</text>
         <text class="point {{ pointClassA }}">{{ pointA }}</text>
         <div class="games" show="{{ !finished }}">
           <text class="games-n">{{ gamesA }}</text>
@@ -30,6 +31,7 @@
           <text class="team {{ teamClassB }}">{{ teamB }}</text>
           <text class="sets {{ setsClassB }}">{{ setsB }}</text>
         </div>
+        <text class="serve serve-b">{{ serveB }}</text>
         <text class="point {{ pointClassB }}">{{ pointB }}</text>
         <div class="games" show="{{ !finished }}">
           <text class="games-n">{{ gamesB }}</text>
@@ -146,6 +148,18 @@
 .sn-b { color: #57b0ff; }
 .sn-on { color: #0a1018; }
 
+/* Ligne de service : presente des deux cotes meme vide, sinon les deux gros
+   scores ne seraient plus alignes. */
+.serve {
+  height: 16px;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+}
+.serve-a { color: #e4f24a; }
+.serve-b { color: #57b0ff; }
+
 .point {
   font-size: 104px;
   font-weight: bold;
@@ -254,6 +268,8 @@ export default {
     teamClassB: '',
     plateClassA: '',
     plateClassB: '',
+    serveA: '',
+    serveB: '',
     pointA: '0',
     pointB: '0',
     gamesA: '0',
@@ -373,6 +389,11 @@ export default {
     this.teamClassB = servingB ? 'tm-on' : ''
     this.setsClassA = servingA ? 'sn-on' : 'sn-a'
     this.setsClassB = servingB ? 'sn-on' : 'sn-b'
+
+    // On engage a droite en debut de jeu, puis on alterne a chaque point.
+    const cote = engine.servingCourt(m) === 'right' ? 'DROITE' : 'GAUCHE'
+    this.serveA = servingA ? 'SERVICE ' + cote : ''
+    this.serveB = servingB ? 'SERVICE ' + cote : ''
 
     if (m.finished) {
       // Points et jeux sont remis a zero : on affiche les sets gagnes.

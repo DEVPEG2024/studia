@@ -90,6 +90,7 @@ Ce n'est pas l'appareil, mais c'est la géométrie de l'appareil.
 | Match | 2 sets gagnants (défaut) ou 1 set sec |
 | Set décisif | set normal (défaut) ou **super tie-break en 10 points** |
 | Service | alterne à chaque jeu ; 1 puis 2 points en jeu décisif ; le premier serveur du tie-break reçoit au set suivant |
+| Côté de service | on engage à **droite** en début de jeu, puis on alterne à chaque point, jeu décisif compris |
 | Côtés | jeux impairs cumulés, et tous les 6 points en jeu décisif |
 
 Tout est réglable depuis l'écran **REGLAGES** de la montre. Un changement de
@@ -136,9 +137,12 @@ La carte de notification d'une montre a deux lignes : un titre lu en premier,
 un détail dessous. Elles sont donc séparées plutôt qu'empilées.
 
 ```
-Jeu NOUS                    Set NOUS 6-4          Match NOUS 2-1
-Jeux 4-3 · Sets 1-0         Sets 2-0              6-4 · 3-6 · 6-2
+Jeu NOUS                         Set NOUS 6-4        Match NOUS 2-1
+Jeux 4-3 · Service EUX           Sets 2-0            6-4 · 3-6 · 6-2
 ```
+
+Au changement de jeu, le service change de camp : c'est le moment où
+l'annoncer sert le plus.
 
 Les notifications portent toutes la même étiquette : la montre en affiche une
 seule, remplacée à chaque fois, au lieu d'en empiler quinze.
@@ -183,13 +187,13 @@ Au poignet, le score et rien d'autre : le point en grand, les jeux dessous,
 une troisième ligne seulement quand la phase change la façon de compter.
 
 ```
-40 - 30            (titre, en grand)
-Jeux 5-4           (artiste ; « · Sets 1-0 » dès le premier set joué)
-                   (album : vide, sauf « Jeu decisif » ou « Super tie-break »)
+40 - 30                    (titre, en grand)
+Jeux 5-4                   (artiste ; « · Sets 1-0 » dès le premier set joué)
+Service NOUS droite        (album)
 ```
 
-Le service, lui, reste sur le téléphone, où le camp qui sert s'éclaire et où
-la place ne manque pas. Une montre lue en une seconde n'a pas à être décodée.
+La troisième ligne nomme le serveur **et son côté d'engagement**, qui change
+à chaque point : c'est précisément ce qu'on perd de vue en jouant.
 
 À activer par `REGLAGES → Boutons montre (essai)`, puis ouvrir l'écran musique
 de la montre.
