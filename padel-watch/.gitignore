@@ -1,6 +1,6 @@
 node_modules/
 build/
-dist/
-sign/
-.hap/
+dist/*
+!dist/*.rpk
+.temp_*/
 *.log

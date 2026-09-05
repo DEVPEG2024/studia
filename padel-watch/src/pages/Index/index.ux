@@ -200,7 +200,7 @@ const BALL_LABELS = { game: 'BALLE DE JEU', set: 'BALLE DE SET', match: 'BALLE D
 const BALL_RANK = { game: 1, set: 2, match: 3 }
 
 export default {
-  private: {
+  data: {
     teamA: 'NOUS',
     teamB: 'EUX',
     phaseText: 'SET 1',

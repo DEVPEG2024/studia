@@ -78,41 +78,68 @@ npm run verify       # contrôle des .ux + 21 tests du moteur
 npm run build        # -> dist/com.padel.compteur.debug.1.0.0.rpk
 ```
 
-`npm run build` utilise `hap-toolkit` et signe le paquet avec un certificat de
-debug généré automatiquement — parfait pour un usage personnel. `npm run release`
-produit une version signée par un certificat à soi, utile seulement pour une
-distribution, dont on n'a pas besoin ici.
+La compilation utilise **`aiot-toolkit`**, la chaîne d'outils officielle Xiaomi
+pour les quick apps Vela (`aiot build`) — c'est elle qui génère le bytecode
+`jsc`, le `manifest-watch.json` et la signature attendus par la montre. Le
+paquet est signé avec le certificat de debug intégré, ce qui suffit pour une
+installation personnelle.
+
+Le `.rpk` déjà compilé est versionné dans **`dist/`** : on peut le récupérer
+directement depuis GitHub sans rien installer.
 
 ## Installer sur la Redmi Watch 4
 
-L'installation d'une quick app se fait par l'application **Mi Fitness /
-Xiaomi Wear** du téléphone appairé, pas par un store :
+Il n'y a pas de store à passer, mais pas non plus de bouton officiel : on
+passe par le **menu de debug caché de Mi Fitness**, sur le téléphone appairé.
 
-1. Téléphone et montre sur le **même réseau Wi-Fi**, montre appairée et
-   connectée à Mi Fitness.
-2. Dans Mi Fitness, activer le **mode développeur** (section « À propos » /
-   « Paramètres du laboratoire » selon la version — il faut généralement taper
-   plusieurs fois sur le numéro de version).
-3. Lancer le serveur de debug local :
-   ```bash
-   npm run server            # affiche une URL et un QR code
-   ```
-4. Depuis le mode développeur de Mi Fitness, **scanner le QR code** (ou saisir
-   l'adresse affichée) pour envoyer `dist/*.rpk` à la montre.
-5. L'application **Padel** apparaît dans la liste des applications de la montre.
+### 1. Mettre le `.rpk` sur le téléphone
 
-Sur certaines versions de HyperOS, le mode développeur n'accepte que les paquets
-poussés depuis l'**outil de développement Xiaomi pour objets connectés**
-(*Xiaomi Wearable Quick App IDE*, à télécharger sur le site développeur Xiaomi).
-Dans ce cas : ouvrir ce dossier comme projet dans l'IDE — la structure
-(`src/manifest.json`, `src/app.ux`, `src/pages/**`) est la structure standard
-d'une quick app — puis utiliser sa commande d'installation sur appareil connecté.
-Le code source ne change pas, seul l'outil qui empaquette change.
+Télécharger `dist/com.padel.compteur.debug.1.0.0.rpk` depuis ce dépôt (ou le
+recompiler) et l'enregistrer dans les fichiers du téléphone — n'importe quel
+dossier accessible par le sélecteur de fichiers.
 
-> **Non vérifié sur appareil.** Le projet compile et produit un `.rpk` signé,
-> le moteur de score est couvert par des tests et l'interface a été validée au
-> pixel dans le simulateur — mais je n'ai pas de Redmi Watch 4 pour confirmer
-> l'installation. Voir « Dépannage » si la montre refuse le paquet.
+### 2. Ouvrir le menu de debug de Mi Fitness
+
+Dans l'application **Mi Fitness** (téléphone) :
+
+```
+Moi  ->  À propos  ->  Debug  ->  Applications tierces
+```
+
+Il s'agit du **À propos de l'application**, pas du « À propos de l'appareil »
+de la montre. Sur la plupart des versions, l'entrée `Debug` n'apparaît qu'après
+plusieurs appuis successifs sur le logo ou le numéro de version.
+
+### 3. Installer
+
+1. `Cliquer pour saisir le nom du paquet` → saisir **`com.padel.compteur`**
+   (le nom exact n'est nécessaire que pour désinstaller plus tard).
+2. `Installer une application tierce`.
+3. Choisir le fichier `.rpk` enregistré à l'étape 1.
+4. Un message de confirmation apparaît ; **Padel** arrive dans la liste des
+   applications de la montre.
+
+### Si le menu Debug n'existe pas
+
+Il est absent de certaines versions, notamment **hors de Chine** et sur
+**iOS** — l'installation d'applications tierces sur les montres Vela est une
+fonction pensée d'abord pour l'application chinoise 小米运动健康, sur Android.
+Deux contournements, tous deux sur Android :
+
+- **Gadgetbridge** (libre, F-Droid) : son *App Manager* sait envoyer un `.rpk`
+  aux montres Xiaomi « protobuf ». Support des Redmi Watch encore expérimental,
+  et il faut extraire l'*AuthKey* de l'application officielle.
+- **Outils de la communauté BandBBS** : installation Bluetooth en un clic, avec
+  l'AuthKey lue via Shizuku dans les journaux de Mi Fitness.
+
+> **Non vérifié sur appareil.** Le projet compile avec la chaîne officielle
+> Xiaomi et produit un `.rpk` Vela signé ; le moteur de score est couvert par
+> 21 tests et l'interface a été rendue et pilotée au pixel dans un navigateur à
+> 390 × 450. Mais je n'ai ni Redmi Watch 4 ni accès à l'émulateur Vela
+> (`npx aiot initEmulatorEnv`, à lancer depuis une machine ayant accès au CDN
+> Xiaomi) pour confirmer le rendu et l'installation sur le vrai runtime.
+> Les chemins de menus ci-dessus proviennent de documentations tierces et
+> varient selon la version de Mi Fitness.
 
 ## Structure du projet
 
@@ -153,11 +180,12 @@ npm run check  # blocs .ux bien formés, classes CSS et gestionnaires existants
 
 | Symptôme | Piste |
 |---|---|
-| La montre refuse le `.rpk` | Baisser `minPlatformVersion` dans `src/manifest.json` (essayer `1000`, `1010`) : la valeur doit être ≤ à la version de plateforme de la montre. |
+| La montre refuse le `.rpk` | `minPlatformVersion` est à `1000` dans `src/manifest.json`, la valeur du projet de démonstration officiel Xiaomi. Si le refus persiste, vérifier que `deviceTypeList` contient bien `"watch"`. |
+| L'app s'installe mais l'écran reste noir | Passer `config.logLevel` à `"debug"` dans `src/manifest.json` et relire les journaux via Mi Fitness. Le suspect le plus probable est la page Réglages : remplacer `<list>`/`<list-item>` par des `<div>` dans `src/pages/Settings/index.ux`. |
 | Pas de vibration | Vérifier le réglage `VIBRATION`, puis retirer `system.vibrator` de `features` si Vela le refuse — les appels sont déjà protégés, l'app fonctionne sans. |
 | L'écran s'éteint en plein match | Réglage `ECRAN ALLUME`. Si Vela ne fournit pas `system.brightness`, augmenter la temporisation d'écran dans les réglages de la montre. |
-| La page Réglages ne s'affiche pas | Certaines versions de Vela ne gèrent pas `<list>` : remplacer `<list>`/`<list-item>` par des `<div>` dans `src/pages/Settings/index.ux`. |
-| Texte tronqué | La maquette suppose 390 px de large (`designWidth` dans `manifest.json`). Ajuster cette valeur pour un autre écran. |
+| Texte tronqué ou décalé | La maquette suppose 390 px de large (`config.designWidth` dans `src/manifest.json`). Ajuster cette valeur pour un autre écran. |
+| Désinstaller | Même menu Debug, `Applications tierces`, avec le nom de paquet `com.padel.compteur`. |
 
 ## Licence
 

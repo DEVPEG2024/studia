@@ -1,20 +1,31 @@
 {
   "package": "com.padel.compteur",
   "name": "Padel",
-  "icon": "/common/logo.png",
   "versionName": "1.0.0",
   "versionCode": 1,
-  "minPlatformVersion": 1030,
+  "minPlatformVersion": 1000,
+  "icon": "/common/logo.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.vibrator"
+    },
+    {
+      "name": "system.brightness"
+    }
+  ],
   "config": {
     "logLevel": "log",
     "designWidth": 390
   },
-  "features": [
-    { "name": "system.router" },
-    { "name": "system.storage" },
-    { "name": "system.vibrator" },
-    { "name": "system.brightness" }
-  ],
   "router": {
     "entry": "pages/Index",
     "pages": {
@@ -23,21 +34,6 @@
       },
       "pages/Settings": {
         "component": "index"
-      }
-    }
-  },
-  "display": {
-    "backgroundColor": "#000000",
-    "fullScreen": true,
-    "titleBar": false,
-    "pages": {
-      "pages/Index": {
-        "titleBar": false,
-        "fullScreen": true
-      },
-      "pages/Settings": {
-        "titleBar": false,
-        "fullScreen": true
       }
     }
   }
