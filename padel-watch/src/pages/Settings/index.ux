@@ -29,7 +29,7 @@
 .page {
   flex: 1;
   flex-direction: column;
-  background-color: #000000;
+  background-color: #0a1018;
 }
 .header {
   height: 48px;
@@ -38,7 +38,7 @@
 }
 .title {
   font-size: 16px;
-  color: #6b7280;
+  color: #6b7f93;
   text-align: center;
   width: 100%;
 }
@@ -52,7 +52,9 @@
   flex-direction: row;
   align-items: center;
   height: 56px;
-  background-color: #14161a;
+  background-color: #131c27;
+  border-width: 1px;
+  border-color: #22303f;
   border-radius: 12px;
   margin-bottom: 8px;
   padding-left: 14px;
@@ -61,11 +63,11 @@
 .label {
   flex: 1;
   font-size: 15px;
-  color: #d1d5db;
+  color: #a9bccd;
 }
 .value {
   font-size: 16px;
-  color: #2ee6a8;
+  color: #e4f24a;
   text-align: right;
 }
 .note {
@@ -76,12 +78,14 @@
 }
 .note-text {
   font-size: 12px;
-  color: #6b7280;
+  color: #6b7f93;
   lines: 3;
 }
 .apply {
   height: 52px;
-  background-color: #1d3a2f;
+  background-color: #23301a;
+  border-width: 1px;
+  border-color: #6c7420;
   border-radius: 12px;
   margin-bottom: 8px;
   justify-content: center;
@@ -89,13 +93,15 @@
 }
 .apply-text {
   font-size: 14px;
-  color: #2ee6a8;
+  color: #e4f24a;
   text-align: center;
   width: 100%;
 }
 .back {
   height: 52px;
-  background-color: #14161a;
+  background-color: #131c27;
+  border-width: 1px;
+  border-color: #22303f;
   border-radius: 12px;
   margin-bottom: 16px;
   justify-content: center;
@@ -103,7 +109,7 @@
 }
 .back-text {
   font-size: 14px;
-  color: #9ca3af;
+  color: #a9bccd;
   text-align: center;
   width: 100%;
 }

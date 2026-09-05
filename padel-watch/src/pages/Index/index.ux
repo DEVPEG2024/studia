@@ -1,43 +1,49 @@
 <template>
   <div class="page">
 
-    <!-- Bandeau : phase du match + sets gagnes + sets termines -->
-    <div class="header">
+    <!-- Ligne de match : ou on en est, et ce qui est deja joue -->
+    <div class="matchline">
       <text class="phase">{{ phaseText }}</text>
-      <text class="summary">{{ summaryText }}</text>
+      <text class="history">{{ historyText }}</text>
     </div>
 
-    <!-- Terrain : la moitie gauche compte pour NOUS, la droite pour EUX -->
+    <!-- Le terrain : la moitie gauche compte pour NOUS, la droite pour EUX -->
     <div class="court">
-      <div class="side" onclick="scoreA">
-        <div class="team-row">
-          <div class="dot {{ dotClassA }}"></div>
-          <text class="team">{{ teamA }}</text>
+      <div class="half" onclick="scoreA">
+        <div class="plate">
+          <text class="team {{ teamClassA }}">{{ teamA }}</text>
+          <text class="sets {{ setsClassA }}">{{ setsA }}</text>
         </div>
         <text class="point {{ pointClassA }}">{{ pointA }}</text>
-        <text class="games {{ gamesClassA }}">{{ gamesA }}</text>
+        <div class="games" show="{{ !finished }}">
+          <text class="games-n">{{ gamesA }}</text>
+          <text class="games-l">JEUX</text>
+        </div>
       </div>
 
-      <div class="divider"></div>
+      <div class="net"></div>
 
-      <div class="side" onclick="scoreB">
-        <div class="team-row">
-          <div class="dot {{ dotClassB }}"></div>
-          <text class="team">{{ teamB }}</text>
+      <div class="half" onclick="scoreB">
+        <div class="plate">
+          <text class="team {{ teamClassB }}">{{ teamB }}</text>
+          <text class="sets {{ setsClassB }}">{{ setsB }}</text>
         </div>
         <text class="point {{ pointClassB }}">{{ pointB }}</text>
-        <text class="games {{ gamesClassB }}">{{ gamesB }}</text>
+        <div class="games" show="{{ !finished }}">
+          <text class="games-n">{{ gamesB }}</text>
+          <text class="games-l">JEUX</text>
+        </div>
       </div>
     </div>
 
-    <!-- Ligne d'alerte : balle de jeu / set / match, point en or, changement de cote -->
-    <div class="status">
+    <!-- Etat de la balle : egalite, avantage, balle de jeu, changement de cote -->
+    <div class="ballstate">
       <text class="status-text {{ statusClass }}">{{ statusText }}</text>
     </div>
 
-    <!-- Commandes -->
+    <!-- Commandes, ponderees par la frequence d'usage -->
     <div class="bar">
-      <div class="btn" onclick="undoPoint">
+      <div class="btn btn-wide" onclick="undoPoint">
         <text class="btn-text {{ undoClass }}">ANNULER</text>
       </div>
       <div class="btn {{ newBtnClass }}" onclick="newMatch">
@@ -52,136 +58,161 @@
 </template>
 
 <style>
+/* Un terrain de padel vu du dessus. Vela ne gere pas les degrades :
+   la meme charte que la version telephone, transposee en aplats. */
 .page {
   flex: 1;
   flex-direction: column;
-  background-color: #000000;
-  padding-left: 8px;
-  padding-right: 8px;
+  background-color: #0a1018;
 }
 
-/* --- bandeau --- */
-.header {
-  height: 56px;
-  flex-direction: column;
-  justify-content: center;
+/* --- ligne de match --- */
+.matchline {
+  height: 44px;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom-width: 1px;
+  border-bottom-color: #22303f;
 }
 .phase {
-  font-size: 15px;
-  color: #6b7280;
-  text-align: center;
-  width: 100%;
+  font-size: 12px;
+  font-weight: bold;
+  color: #6b7f93;
 }
-.summary {
-  font-size: 17px;
-  color: #e5e7eb;
-  text-align: center;
-  width: 100%;
-  margin-top: 2px;
+.history {
+  font-size: 13px;
+  color: #6b7f93;
+  text-align: right;
 }
 
-/* --- terrain --- */
+/* --- les deux camps --- */
 .court {
   flex: 1;
   flex-direction: row;
   align-items: center;
 }
-.side {
+.half {
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-.divider {
-  width: 1px;
-  height: 200px;
-  background-color: #1f2329;
+.net {
+  width: 2px;
+  height: 190px;
+  background-color: #22303f;
 }
-.team-row {
+
+/* Plaque d'equipe : le nom, et les sets qui lui appartiennent.
+   Le camp au service a son nom allume — a defaut de degrade. */
+.plate {
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  height: 20px;
+  height: 22px;
 }
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+.team {
+  font-size: 13px;
+  font-weight: bold;
+  color: #6b7f93;
   margin-right: 6px;
 }
-.dot-off { background-color: #000000; }
-.dot-a { background-color: #2ee6a8; }
-.dot-b { background-color: #ff9142; }
-.team {
-  font-size: 16px;
-  color: #9ca3af;
+.tm-a { color: #e4f24a; }
+.tm-b { color: #57b0ff; }
+.sets {
+  font-size: 13px;
+  font-weight: bold;
+  color: #6b7f93;
+  border-width: 1px;
+  border-color: #22303f;
+  border-radius: 5px;
+  padding-left: 6px;
+  padding-right: 6px;
   text-align: center;
 }
+.st-won-a { color: #e4f24a; border-color: #6c7420; }
+.st-won-b { color: #57b0ff; border-color: #2a5578; }
+
 .point {
-  font-size: 104px;
+  font-size: 96px;
   font-weight: bold;
   text-align: center;
   width: 100%;
-  height: 120px;
+  height: 112px;
 }
-.games {
-  font-size: 34px;
-  text-align: center;
-  width: 100%;
-}
-.pt-a { color: #2ee6a8; }
-.pt-b { color: #ff9142; }
-.pt-dim { color: #374151; }
-.gm-on { color: #ffffff; }
-.gm-dim { color: #4b5563; }
+.pt-a { color: #e4f24a; }
+.pt-b { color: #57b0ff; }
+.pt-dim { color: #2c3948; }
 
-/* --- ligne d'alerte --- */
-.status {
+.games {
+  flex-direction: row;
+  align-items: flex-end;
   height: 30px;
+}
+.games-n {
+  font-size: 26px;
+  font-weight: bold;
+  color: #e8eef5;
+  margin-right: 4px;
+}
+.games-l {
+  font-size: 10px;
+  font-weight: bold;
+  color: #6b7f93;
+  margin-bottom: 4px;
+}
+
+/* --- etat de la balle --- */
+.ballstate {
+  height: 34px;
   justify-content: center;
   align-items: center;
 }
 .status-text {
-  font-size: 16px;
+  font-size: 12px;
+  font-weight: bold;
   text-align: center;
   width: 100%;
 }
-.st-none { color: #000000; }
-.st-a { color: #2ee6a8; }
-.st-b { color: #ff9142; }
-.st-warn { color: #fbbf24; }
-.st-neutral { color: #e5e7eb; }
+.sl-none { color: #0a1018; }
+.sl-a { color: #e4f24a; }
+.sl-b { color: #57b0ff; }
+.sl-warn { color: #ffb340; }
+.sl-neutral { color: #e8eef5; }
 
 /* --- commandes --- */
 .bar {
-  height: 60px;
+  height: 58px;
   flex-direction: row;
   align-items: center;
-  padding-bottom: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
 }
 .btn {
   flex: 1;
-  height: 46px;
-  background-color: #14161a;
-  border-radius: 10px;
-  margin-left: 4px;
-  margin-right: 4px;
+  height: 44px;
+  background-color: #131c27;
+  border-width: 1px;
+  border-color: #22303f;
+  border-radius: 12px;
+  margin-left: 3px;
+  margin-right: 3px;
   justify-content: center;
   align-items: center;
 }
-.btn-danger {
-  background-color: #7f1d1d;
-}
+.btn-wide { flex: 1.5; }
+.btn-danger { background-color: #3a1620; border-color: #6d2233; }
 .btn-text {
-  font-size: 14px;
-  color: #d1d5db;
+  font-size: 12px;
+  font-weight: bold;
+  color: #a9bccd;
   text-align: center;
   width: 100%;
 }
-.btn-text-off {
-  color: #374151;
-}
+.btn-text-off { color: #3a4756; }
 </style>
 
 <script>
@@ -204,19 +235,22 @@ export default {
     teamA: 'NOUS',
     teamB: 'EUX',
     phaseText: 'SET 1',
-    summaryText: 'SETS 0 - 0',
+    historyText: '',
+    setsA: '0',
+    setsB: '0',
+    setsClassA: '',
+    setsClassB: '',
+    teamClassA: '',
+    teamClassB: '',
     pointA: '0',
     pointB: '0',
     gamesA: '0',
     gamesB: '0',
     pointClassA: 'pt-a',
     pointClassB: 'pt-b',
-    gamesClassA: 'gm-on',
-    gamesClassB: 'gm-on',
-    dotClassA: 'dot-off',
-    dotClassB: 'dot-off',
+    finished: false,
     statusText: '',
-    statusClass: 'st-none',
+    statusClass: 'sl-none',
     undoClass: 'btn-text-off',
     newLabel: 'NOUVEAU',
     newBtnClass: ''
@@ -358,6 +392,7 @@ export default {
 
     this.teamA = m.config.teams[0]
     this.teamB = m.config.teams[1]
+    this.finished = m.finished
 
     this.phaseText = m.finished
       ? 'MATCH TERMINE'
@@ -365,23 +400,24 @@ export default {
         ? 'SUPER TIE-BREAK'
         : m.tieBreak ? 'JEU DECISIF' : 'SET ' + engine.currentSetNumber(m)
 
-    const played = engine.setSummary(m)
-    this.summaryText =
-      'SETS ' + m.sets[0] + ' - ' + m.sets[1] + (played.length ? '   ' + played.join('  ') : '')
+    // Les sets gagnes appartiennent a chaque camp ; le bandeau ne garde que
+    // les sets deja joues.
+    this.historyText = engine.setSummary(m).join(' · ')
+    this.setsA = String(m.sets[0])
+    this.setsB = String(m.sets[1])
+    this.setsClassA = m.sets[0] > 0 ? 'st-won-a' : ''
+    this.setsClassB = m.sets[1] > 0 ? 'st-won-b' : ''
+
+    // Faute de degrade, le camp au service a son nom allume.
+    this.teamClassA = !m.finished && server === 0 ? 'tm-a' : ''
+    this.teamClassB = !m.finished && server === 1 ? 'tm-b' : ''
 
     if (m.finished) {
-      // Le match est fini : points et jeux sont remis a zero, on affiche
-      // le score qui compte vraiment, les sets gagnes.
+      // Points et jeux sont remis a zero : on affiche les sets gagnes.
       this.pointA = String(m.sets[0])
       this.pointB = String(m.sets[1])
-      this.gamesA = ''
-      this.gamesB = ''
       this.pointClassA = m.winner === 0 ? 'pt-a' : 'pt-dim'
       this.pointClassB = m.winner === 1 ? 'pt-b' : 'pt-dim'
-      this.gamesClassA = 'gm-dim'
-      this.gamesClassB = 'gm-dim'
-      this.dotClassA = 'dot-off'
-      this.dotClassB = 'dot-off'
     } else {
       this.pointA = engine.pointLabel(m, 0)
       this.pointB = engine.pointLabel(m, 1)
@@ -389,10 +425,6 @@ export default {
       this.gamesB = String(m.games[1])
       this.pointClassA = 'pt-a'
       this.pointClassB = 'pt-b'
-      this.gamesClassA = 'gm-on'
-      this.gamesClassB = 'gm-on'
-      this.dotClassA = server === 0 ? 'dot-a' : 'dot-off'
-      this.dotClassB = server === 1 ? 'dot-b' : 'dot-off'
     }
 
     this.undoClass = engine.canUndo(m) ? '' : 'btn-text-off'
@@ -402,12 +434,12 @@ export default {
   applyStatus(m, status) {
     if (m.finished) {
       this.statusText = 'VICTOIRE ' + m.config.teams[m.winner]
-      this.statusClass = m.winner === 0 ? 'st-a' : 'st-b'
+      this.statusClass = m.winner === 0 ? 'sl-a' : 'sl-b'
       return
     }
     if (m.changeEnds) {
       this.statusText = 'CHANGEMENT DE COTE'
-      this.statusClass = 'st-warn'
+      this.statusClass = 'sl-warn'
       return
     }
     // Avec les avantages, un point marque par l'un fait retomber l'autre
@@ -415,17 +447,17 @@ export default {
     if (!m.tieBreak && !m.config.goldenPoint) {
       if (m.points[0] === 4) {
         this.statusText = 'AVANTAGE ' + m.config.teams[0]
-        this.statusClass = 'st-a'
+        this.statusClass = 'sl-a'
         return
       }
       if (m.points[1] === 4) {
         this.statusText = 'AVANTAGE ' + m.config.teams[1]
-        this.statusClass = 'st-b'
+        this.statusClass = 'sl-b'
         return
       }
       if (m.points[0] === 3 && m.points[1] === 3) {
         this.statusText = 'EGALITE'
-        this.statusClass = 'st-neutral'
+        this.statusClass = 'sl-neutral'
         return
       }
     }
@@ -434,17 +466,17 @@ export default {
     const b = status.teams[1]
     if (!a && !b) {
       this.statusText = ''
-      this.statusClass = 'st-none'
+      this.statusClass = 'sl-none'
       return
     }
     if (a && b) {
       const best = BALL_RANK[a] >= BALL_RANK[b] ? a : b
       this.statusText = best === 'game' && status.golden ? 'POINT EN OR' : BALL_LABELS[best]
-      this.statusClass = 'st-warn'
+      this.statusClass = 'sl-warn'
       return
     }
     this.statusText = BALL_LABELS[a || b]
-    this.statusClass = a ? 'st-a' : 'st-b'
+    this.statusClass = a ? 'sl-a' : 'sl-b'
   }
 }
 </script>

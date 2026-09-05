@@ -11,19 +11,29 @@ dans un fichier `.rpk` que l'on installe en local via le mode développeur.
 C'est ce que produit ce dépôt.
 
 ```
-                 ┌──────────────────────────┐
-                 │        SET 3             │
-                 │  SETS 1-1   6-4  6-7(5)  │
-                 │                          │
-                 │   ● NOUS        EUX      │
-                 │                          │
-                 │     40           15      │
-                 │      5            4      │
-                 │                          │
-                 │     BALLE DE MATCH       │
-                 │ ANNULER NOUVEAU REGLAGES │
-                 └──────────────────────────┘
+        ┌─────────────────────────────────────┐
+        │  SET 3                  6-4 · 6-7(5)│
+        ├──────────────────┬──────────────────┤
+        │   NOUS  [1]      ╎      EUX  [1]    │
+        │                  ╎                  │
+        │       40         ╎        15        │
+        │      5 JEUX      ╎       4 JEUX     │
+        ├──────────────────┴──────────────────┤
+        │           BALLE DE MATCH            │
+        │  ANNULER      NOUVEAU     RÉGLAGES  │
+        └─────────────────────────────────────┘
 ```
+
+L'écran est un **terrain vu du dessus** : deux camps séparés par un filet,
+sur la résine bleue sous les projecteurs. Le camp au service s'éclaire — la
+pastille de quelques pixels devient un demi-écran, lisible à bout de bras.
+Le jaune est celui de la balle, le bleu celui du terrain ; ce couple reste
+distinguable en cas de daltonisme rouge-vert, contrairement au vert-orange.
+
+Aucune police n'est chargée depuis le réseau : sur un terrain sans signal,
+une police qui échoue en silence est pire qu'une pile système travaillée —
+chiffres tabulaires, graisse haute, chasse resserrée sur le score, capitales
+espacées pour les étiquettes.
 
 ## Ce que fait l'application
 
