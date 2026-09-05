@@ -1,0 +1,10 @@
+<script>
+export default {
+  onCreate() {
+    console.info('Padel : application demarree')
+  },
+  onDestroy() {
+    console.info('Padel : application arretee')
+  }
+}
+</script>

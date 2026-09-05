@@ -1,0 +1,190 @@
+<template>
+  <div class="page">
+    <div class="header">
+      <text class="title">REGLAGES</text>
+    </div>
+
+    <list class="list">
+      <list-item type="row" class="row" for="{{ rows }}" onclick="toggle($idx)">
+        <text class="label">{{ $item.label }}</text>
+        <text class="value">{{ $item.value }}</text>
+      </list-item>
+
+      <list-item type="note" class="note">
+        <text class="note-text">{{ noteText }}</text>
+      </list-item>
+
+      <list-item type="apply" class="apply" onclick="applyAndRestart">
+        <text class="apply-text">APPLIQUER + NOUVEAU MATCH</text>
+      </list-item>
+
+      <list-item type="back" class="back" onclick="goBack">
+        <text class="back-text">RETOUR</text>
+      </list-item>
+    </list>
+  </div>
+</template>
+
+<style>
+.page {
+  flex: 1;
+  flex-direction: column;
+  background-color: #000000;
+}
+.header {
+  height: 48px;
+  justify-content: center;
+  align-items: center;
+}
+.title {
+  font-size: 16px;
+  color: #6b7280;
+  text-align: center;
+  width: 100%;
+}
+.list {
+  flex: 1;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.row {
+  flex-direction: row;
+  align-items: center;
+  height: 56px;
+  background-color: #14161a;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+.label {
+  flex: 1;
+  font-size: 15px;
+  color: #d1d5db;
+}
+.value {
+  font-size: 16px;
+  color: #2ee6a8;
+  text-align: right;
+}
+.note {
+  padding-top: 4px;
+  padding-bottom: 10px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.note-text {
+  font-size: 12px;
+  color: #6b7280;
+  lines: 3;
+}
+.apply {
+  height: 52px;
+  background-color: #1d3a2f;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.apply-text {
+  font-size: 14px;
+  color: #2ee6a8;
+  text-align: center;
+  width: 100%;
+}
+.back {
+  height: 52px;
+  background-color: #14161a;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  justify-content: center;
+  align-items: center;
+}
+.back-text {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+  width: 100%;
+}
+</style>
+
+<script>
+import router from '@system.router'
+import device from '../../common/device.js'
+import store from '../../common/store.js'
+
+const DEFS = [
+  { key: 'goldenPoint', label: 'POINT EN OR', on: 'OUI', off: 'AVANTAGES' },
+  { key: 'superTieBreak', label: 'SET DECISIF', on: 'SUPER TB', off: 'NORMAL' },
+  { key: 'setsToWin', label: 'FORMAT', on: '3 SETS', off: '1 SET' },
+  { key: 'vibration', label: 'VIBRATION', on: 'OUI', off: 'NON' },
+  { key: 'keepScreenOn', label: 'ECRAN ALLUME', on: 'OUI', off: 'NON' }
+]
+
+let settings = null
+
+export default {
+  private: {
+    rows: [],
+    noteText: 'Les regles changees s appliquent au prochain match.'
+  },
+
+  onInit() {
+    const self = this
+    store.loadSettings(function (loaded) {
+      settings = loaded
+      self.rebuild()
+    })
+  },
+
+  isOn(key) {
+    return key === 'setsToWin' ? settings.setsToWin === 2 : !!settings[key]
+  },
+
+  rebuild() {
+    const rows = []
+    for (let i = 0; i < DEFS.length; i++) {
+      const def = DEFS[i]
+      rows.push({
+        key: def.key,
+        label: def.label,
+        value: this.isOn(def.key) ? def.on : def.off
+      })
+    }
+    this.rows = rows
+  },
+
+  toggle(index) {
+    if (!settings) return
+    const def = DEFS[index]
+    if (!def) return
+    if (def.key === 'setsToWin') {
+      settings.setsToWin = settings.setsToWin === 2 ? 1 : 2
+    } else {
+      settings[def.key] = !settings[def.key]
+    }
+    store.saveSettings(settings)
+    if (settings.vibration) device.vibrate('short')
+    if (def.key === 'keepScreenOn') device.keepScreenOn(settings.keepScreenOn)
+    this.rebuild()
+  },
+
+  applyAndRestart() {
+    if (settings) {
+      store.saveSettings(settings)
+      if (settings.vibration) device.vibrate('long')
+    }
+    store.clearMatch()
+    store.requestReset()
+    this.goBack()
+  },
+
+  goBack() {
+    try {
+      router.back()
+    } catch (e) {
+      console.info('Padel : retour impossible - ' + e)
+    }
+  }
+}
+</script>

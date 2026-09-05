@@ -1,0 +1,19 @@
+{
+  "name": "padel-watch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compteur de points de padel pour Redmi Watch 4 (quick app Xiaomi Vela), 100% local",
+  "scripts": {
+    "test": "node --test test/engine.test.js",
+    "check": "node tools/check-ux.js src/app.ux src/pages/Index/index.ux src/pages/Settings/index.ux",
+    "verify": "npm run check && npm test",
+    "icon": "node tools/make-icon.js 192",
+    "web": "node tools/serve.js",
+    "build": "hap build",
+    "release": "hap release",
+    "server": "hap server"
+  },
+  "devDependencies": {
+    "hap-toolkit": "^2.1.1"
+  }
+}

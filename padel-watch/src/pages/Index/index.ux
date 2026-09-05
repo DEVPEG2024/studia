@@ -1,0 +1,430 @@
+<template>
+  <div class="page">
+
+    <!-- Bandeau : phase du match + sets gagnes + sets termines -->
+    <div class="header">
+      <text class="phase">{{ phaseText }}</text>
+      <text class="summary">{{ summaryText }}</text>
+    </div>
+
+    <!-- Terrain : la moitie gauche compte pour NOUS, la droite pour EUX -->
+    <div class="court">
+      <div class="side" onclick="scoreA">
+        <div class="team-row">
+          <div class="dot {{ dotClassA }}"></div>
+          <text class="team">{{ teamA }}</text>
+        </div>
+        <text class="point {{ pointClassA }}">{{ pointA }}</text>
+        <text class="games {{ gamesClassA }}">{{ gamesA }}</text>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="side" onclick="scoreB">
+        <div class="team-row">
+          <div class="dot {{ dotClassB }}"></div>
+          <text class="team">{{ teamB }}</text>
+        </div>
+        <text class="point {{ pointClassB }}">{{ pointB }}</text>
+        <text class="games {{ gamesClassB }}">{{ gamesB }}</text>
+      </div>
+    </div>
+
+    <!-- Ligne d'alerte : balle de jeu / set / match, point en or, changement de cote -->
+    <div class="status">
+      <text class="status-text {{ statusClass }}">{{ statusText }}</text>
+    </div>
+
+    <!-- Commandes -->
+    <div class="bar">
+      <div class="btn" onclick="undoPoint">
+        <text class="btn-text {{ undoClass }}">ANNULER</text>
+      </div>
+      <div class="btn {{ newBtnClass }}" onclick="newMatch">
+        <text class="btn-text">{{ newLabel }}</text>
+      </div>
+      <div class="btn" onclick="openSettings">
+        <text class="btn-text">REGLAGES</text>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<style>
+.page {
+  flex: 1;
+  flex-direction: column;
+  background-color: #000000;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* --- bandeau --- */
+.header {
+  height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.phase {
+  font-size: 15px;
+  color: #6b7280;
+  text-align: center;
+  width: 100%;
+}
+.summary {
+  font-size: 17px;
+  color: #e5e7eb;
+  text-align: center;
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* --- terrain --- */
+.court {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+}
+.side {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.divider {
+  width: 1px;
+  height: 200px;
+  background-color: #1f2329;
+}
+.team-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  margin-right: 6px;
+}
+.dot-off { background-color: #000000; }
+.dot-a { background-color: #2ee6a8; }
+.dot-b { background-color: #ff9142; }
+.team {
+  font-size: 16px;
+  color: #9ca3af;
+  text-align: center;
+}
+.point {
+  font-size: 104px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  height: 120px;
+}
+.games {
+  font-size: 34px;
+  text-align: center;
+  width: 100%;
+}
+.pt-a { color: #2ee6a8; }
+.pt-b { color: #ff9142; }
+.pt-dim { color: #374151; }
+.gm-on { color: #ffffff; }
+.gm-dim { color: #4b5563; }
+
+/* --- ligne d'alerte --- */
+.status {
+  height: 30px;
+  justify-content: center;
+  align-items: center;
+}
+.status-text {
+  font-size: 16px;
+  text-align: center;
+  width: 100%;
+}
+.st-none { color: #000000; }
+.st-a { color: #2ee6a8; }
+.st-b { color: #ff9142; }
+.st-warn { color: #fbbf24; }
+.st-neutral { color: #e5e7eb; }
+
+/* --- commandes --- */
+.bar {
+  height: 60px;
+  flex-direction: row;
+  align-items: center;
+  padding-bottom: 6px;
+}
+.btn {
+  flex: 1;
+  height: 46px;
+  background-color: #14161a;
+  border-radius: 10px;
+  margin-left: 4px;
+  margin-right: 4px;
+  justify-content: center;
+  align-items: center;
+}
+.btn-danger {
+  background-color: #7f1d1d;
+}
+.btn-text {
+  font-size: 14px;
+  color: #d1d5db;
+  text-align: center;
+  width: 100%;
+}
+.btn-text-off {
+  color: #374151;
+}
+</style>
+
+<script>
+import router from '@system.router'
+import engine from '../../common/padel-engine.js'
+import device from '../../common/device.js'
+import store from '../../common/store.js'
+
+// Etat hors systeme reactif : le match porte une pile d'annulation
+// qu'il serait inutile (et couteux) d'observer.
+let match = null
+let settings = null
+let confirmTimer = null
+
+const BALL_LABELS = { game: 'BALLE DE JEU', set: 'BALLE DE SET', match: 'BALLE DE MATCH' }
+const BALL_RANK = { game: 1, set: 2, match: 3 }
+
+export default {
+  private: {
+    teamA: 'NOUS',
+    teamB: 'EUX',
+    phaseText: 'SET 1',
+    summaryText: 'SETS 0 - 0',
+    pointA: '0',
+    pointB: '0',
+    gamesA: '0',
+    gamesB: '0',
+    pointClassA: 'pt-a',
+    pointClassB: 'pt-b',
+    gamesClassA: 'gm-on',
+    gamesClassB: 'gm-on',
+    dotClassA: 'dot-off',
+    dotClassB: 'dot-off',
+    statusText: '',
+    statusClass: 'st-none',
+    undoClass: 'btn-text-off',
+    newLabel: 'NOUVEAU',
+    newBtnClass: ''
+  },
+
+  onShow() {
+    const self = this
+    store.loadSettings(function (loaded) {
+      settings = loaded
+      device.keepScreenOn(settings.keepScreenOn)
+      store.takeReset(function (resetRequested) {
+        if (resetRequested) match = null
+        if (match) {
+          self.refresh()
+          return
+        }
+        store.loadMatch(function (raw) {
+          match = engine.deserialize(raw) || engine.createMatch(self.configFromSettings())
+          self.refresh()
+        })
+      })
+    })
+  },
+
+  onHide() {
+    this.cancelConfirm()
+  },
+
+  onDestroy() {
+    this.cancelConfirm()
+    device.keepScreenOn(false)
+  },
+
+  configFromSettings() {
+    const s = settings || store.DEFAULT_SETTINGS
+    return {
+      goldenPoint: s.goldenPoint,
+      superTieBreak: s.superTieBreak,
+      setsToWin: s.setsToWin
+    }
+  },
+
+  /* --------------------------- actions --------------------------- */
+
+  scoreA() {
+    this.addPoint(0)
+  },
+
+  scoreB() {
+    this.addPoint(1)
+  },
+
+  addPoint(team) {
+    if (!match || match.finished) return
+    this.cancelConfirm()
+    const setsBefore = match.setHistory.length
+    const gamesBefore = match.games[0] + match.games[1]
+    engine.addPoint(match, team)
+    const gameEnded =
+      match.finished ||
+      match.setHistory.length !== setsBefore ||
+      match.games[0] + match.games[1] !== gamesBefore
+    this.buzz(gameEnded ? 'long' : 'short')
+    store.saveMatch(engine.serialize(match))
+    this.refresh()
+  },
+
+  undoPoint() {
+    if (!match || !engine.undo(match)) return
+    this.cancelConfirm()
+    this.buzz('short')
+    store.saveMatch(engine.serialize(match))
+    this.refresh()
+  },
+
+  newMatch() {
+    if (!this.confirmNeeded()) {
+      this.startNewMatch()
+      return
+    }
+    if (this.newLabel === 'CONFIRMER') {
+      this.startNewMatch()
+      return
+    }
+    const self = this
+    this.newLabel = 'CONFIRMER'
+    this.newBtnClass = 'btn-danger'
+    confirmTimer = setTimeout(function () {
+      confirmTimer = null
+      self.cancelConfirm()
+    }, 4000)
+  },
+
+  startNewMatch() {
+    this.cancelConfirm()
+    match = engine.createMatch(this.configFromSettings())
+    store.saveMatch(engine.serialize(match))
+    this.buzz('long')
+    this.refresh()
+  },
+
+  /** Inutile de confirmer si le match n'a pas commence ou est deja fini. */
+  confirmNeeded() {
+    if (!match || match.finished) return false
+    return (
+      match.sets[0] + match.sets[1] + match.games[0] + match.games[1] + match.points[0] + match.points[1] > 0
+    )
+  },
+
+  cancelConfirm() {
+    if (confirmTimer) {
+      clearTimeout(confirmTimer)
+      confirmTimer = null
+    }
+    this.newLabel = 'NOUVEAU'
+    this.newBtnClass = ''
+  },
+
+  openSettings() {
+    this.cancelConfirm()
+    try {
+      router.push({ uri: '/pages/Settings' })
+    } catch (e) {
+      console.info('Padel : navigation impossible - ' + e)
+    }
+  },
+
+  buzz(mode) {
+    if (settings && settings.vibration) device.vibrate(mode)
+  },
+
+  /* --------------------------- affichage --------------------------- */
+
+  refresh() {
+    const m = match
+    if (!m) return
+    const status = engine.pointStatus(m)
+    const server = engine.currentServer(m)
+
+    this.teamA = m.config.teams[0]
+    this.teamB = m.config.teams[1]
+
+    this.phaseText = m.finished
+      ? 'MATCH TERMINE'
+      : m.superTieBreak
+        ? 'SUPER TIE-BREAK'
+        : m.tieBreak ? 'JEU DECISIF' : 'SET ' + engine.currentSetNumber(m)
+
+    const played = engine.setSummary(m)
+    this.summaryText =
+      'SETS ' + m.sets[0] + ' - ' + m.sets[1] + (played.length ? '   ' + played.join('  ') : '')
+
+    if (m.finished) {
+      // Le match est fini : points et jeux sont remis a zero, on affiche
+      // le score qui compte vraiment, les sets gagnes.
+      this.pointA = String(m.sets[0])
+      this.pointB = String(m.sets[1])
+      this.gamesA = ''
+      this.gamesB = ''
+      this.pointClassA = m.winner === 0 ? 'pt-a' : 'pt-dim'
+      this.pointClassB = m.winner === 1 ? 'pt-b' : 'pt-dim'
+      this.gamesClassA = 'gm-dim'
+      this.gamesClassB = 'gm-dim'
+      this.dotClassA = 'dot-off'
+      this.dotClassB = 'dot-off'
+    } else {
+      this.pointA = engine.pointLabel(m, 0)
+      this.pointB = engine.pointLabel(m, 1)
+      this.gamesA = String(m.games[0])
+      this.gamesB = String(m.games[1])
+      this.pointClassA = 'pt-a'
+      this.pointClassB = 'pt-b'
+      this.gamesClassA = 'gm-on'
+      this.gamesClassB = 'gm-on'
+      this.dotClassA = server === 0 ? 'dot-a' : 'dot-off'
+      this.dotClassB = server === 1 ? 'dot-b' : 'dot-off'
+    }
+
+    this.undoClass = engine.canUndo(m) ? '' : 'btn-text-off'
+    this.applyStatus(m, status)
+  },
+
+  applyStatus(m, status) {
+    if (m.finished) {
+      this.statusText = 'VICTOIRE ' + m.config.teams[m.winner]
+      this.statusClass = m.winner === 0 ? 'st-a' : 'st-b'
+      return
+    }
+    if (m.changeEnds) {
+      this.statusText = 'CHANGEMENT DE COTE'
+      this.statusClass = 'st-warn'
+      return
+    }
+    const a = status.teams[0]
+    const b = status.teams[1]
+    if (!a && !b) {
+      this.statusText = ''
+      this.statusClass = 'st-none'
+      return
+    }
+    if (a && b) {
+      const best = BALL_RANK[a] >= BALL_RANK[b] ? a : b
+      this.statusText = best === 'game' && status.golden ? 'POINT EN OR' : BALL_LABELS[best]
+      this.statusClass = 'st-warn'
+      return
+    }
+    this.statusText = BALL_LABELS[a || b]
+    this.statusClass = a ? 'st-a' : 'st-b'
+  }
+}
+</script>

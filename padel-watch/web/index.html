@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Padel - simulateur Redmi Watch 4</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 12px;
+    background: #16181d;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* --- cadre montre : 390 x 450, la dalle du Redmi Watch 4 --- */
+  .watch {
+    width: 390px;
+    height: 450px;
+    border-radius: 46px;
+    background: #000;
+    padding: 0 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 0 0 10px #2a2d33, 0 18px 50px rgba(0, 0, 0, .6);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .header { height: 56px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .phase { font-size: 15px; color: #6b7280; }
+  .summary { font-size: 17px; color: #e5e7eb; margin-top: 2px; }
+
+  .court { flex: 1; display: flex; flex-direction: row; align-items: center; }
+  .side {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; height: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .side:active { background: #0c0e11; }
+  .divider { width: 1px; height: 200px; background: #1f2329; }
+  .team-row { display: flex; flex-direction: row; align-items: center; justify-content: center; height: 20px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: #000; }
+  .dot-a { background: #2ee6a8; }
+  .dot-b { background: #ff9142; }
+  .team { font-size: 16px; color: #9ca3af; }
+  .point { font-size: 104px; font-weight: 700; line-height: 120px; height: 120px; }
+  .games { font-size: 34px; }
+  .pt-a { color: #2ee6a8; }
+  .pt-b { color: #ff9142; }
+  .pt-dim { color: #374151; }
+  .gm-on { color: #fff; }
+  .gm-dim { color: #4b5563; }
+
+  .status { height: 30px; display: flex; justify-content: center; align-items: center; }
+  .status-text { font-size: 16px; }
+  .st-none { color: transparent; }
+  .st-a { color: #2ee6a8; }
+  .st-b { color: #ff9142; }
+  .st-warn { color: #fbbf24; }
+  .st-neutral { color: #e5e7eb; }
+
+  .bar { height: 60px; display: flex; flex-direction: row; align-items: center; padding-bottom: 6px; }
+  .btn {
+    flex: 1; height: 46px; background: #14161a; border-radius: 10px;
+    margin: 0 4px; display: flex; justify-content: center; align-items: center;
+    cursor: pointer; border: 0; color: inherit; font: inherit;
+  }
+  .btn:active { background: #1d2026; }
+  .btn-danger { background: #7f1d1d; }
+  .btn-text { font-size: 14px; color: #d1d5db; }
+  .btn-text-off { color: #374151; }
+
+  /* --- panneau hors montre : regles + aide --- */
+  .panel {
+    width: 410px; max-width: 100%;
+    background: #1d2026; border-radius: 14px; padding: 14px 16px;
+    font-size: 13px; line-height: 1.7;
+  }
+  .panel h2 { margin: 0 0 8px; font-size: 13px; color: #9ca3af; font-weight: 600; letter-spacing: .06em; }
+  .rules { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .rules button {
+    background: #14161a; border: 1px solid #2f343c; color: #d1d5db;
+    border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .rules button[aria-pressed="true"] { border-color: #2ee6a8; color: #2ee6a8; }
+  .hint { color: #6b7280; margin: 0; }
+  kbd {
+    background: #0d0f12; border: 1px solid #2f343c; border-radius: 4px;
+    padding: 1px 5px; font-size: 11px; font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="watch" id="watch">
+  <div class="header">
+    <div class="phase" id="phase">SET 1</div>
+    <div class="summary" id="summary">SETS 0 - 0</div>
+  </div>
+
+  <div class="court">
+    <div class="side" id="sideA">
+      <div class="team-row"><span class="dot" id="dotA"></span><span class="team" id="teamA">NOUS</span></div>
+      <div class="point pt-a" id="pointA">0</div>
+      <div class="games gm-on" id="gamesA">0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="side" id="sideB">
+      <div class="team-row"><span class="dot" id="dotB"></span><span class="team" id="teamB">EUX</span></div>
+      <div class="point pt-b" id="pointB">0</div>
+      <div class="games gm-on" id="gamesB">0</div>
+    </div>
+  </div>
+
+  <div class="status"><span class="status-text st-none" id="status">.</span></div>
+
+  <div class="bar">
+    <button class="btn" id="btnUndo"><span class="btn-text btn-text-off" id="undoText">ANNULER</span></button>
+    <button class="btn" id="btnNew"><span class="btn-text" id="newText">NOUVEAU</span></button>
+    <button class="btn" id="btnSettings"><span class="btn-text">REGLAGES</span></button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>REGLES (relance un match)</h2>
+  <div class="rules">
+    <button id="ruleGolden" aria-pressed="true">Point en or</button>
+    <button id="ruleSuperTb" aria-pressed="false">Super tie-break au 3e set</button>
+    <button id="ruleFormat" aria-pressed="true">3 sets</button>
+  </div>
+  <p class="hint">
+    Touchez une moitie de l'ecran pour marquer.
+    Clavier : <kbd>&larr;</kbd> ou <kbd>A</kbd> pour NOUS, <kbd>&rarr;</kbd> ou <kbd>P</kbd> pour EUX,
+    <kbd>Z</kbd> annuler, <kbd>N</kbd> nouveau match.
+  </p>
+</div>
+
+<script src="../src/common/padel-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var engine = window.PadelEngine;
+  var BALL_LABELS = { game: 'BALLE DE JEU', set: 'BALLE DE SET', match: 'BALLE DE MATCH' };
+  var BALL_RANK = { game: 1, set: 2, match: 3 };
+  var STORAGE_KEY = 'padel.web.v1';
+
+  var rules = { goldenPoint: true, superTieBreak: false, setsToWin: 2 };
+  var match = null;
+  var confirmTimer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function setClass(el, base, extra) { el.className = extra ? base + ' ' + extra : base; }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, engine.serialize(match)); } catch (e) { /* mode prive */ }
+  }
+
+  function load() {
+    try { return engine.deserialize(localStorage.getItem(STORAGE_KEY)); } catch (e) { return null; }
+  }
+
+  function refresh() {
+    var m = match;
+    var status = engine.pointStatus(m);
+    var server = engine.currentServer(m);
+
+    $('teamA').textContent = m.config.teams[0];
+    $('teamB').textContent = m.config.teams[1];
+
+    $('phase').textContent = m.finished ? 'MATCH TERMINE'
+      : m.superTieBreak ? 'SUPER TIE-BREAK'
+      : m.tieBreak ? 'JEU DECISIF'
+      : 'SET ' + engine.currentSetNumber(m);
+
+    var played = engine.setSummary(m);
+    $('summary').textContent = 'SETS ' + m.sets[0] + ' - ' + m.sets[1] +
+      (played.length ? ' ' + played.join('  ') : '');
+
+    if (m.finished) {
+      // Points et jeux sont remis a zero : on affiche les sets gagnes.
+      $('pointA').textContent = m.sets[0];
+      $('pointB').textContent = m.sets[1];
+      $('gamesA').textContent = '';
+      $('gamesB').textContent = '';
+      setClass($('pointA'), 'point', m.winner === 0 ? 'pt-a' : 'pt-dim');
+      setClass($('pointB'), 'point', m.winner === 1 ? 'pt-b' : 'pt-dim');
+      setClass($('gamesA'), 'games', 'gm-dim');
+      setClass($('gamesB'), 'games', 'gm-dim');
+      setClass($('dotA'), 'dot', '');
+      setClass($('dotB'), 'dot', '');
+    } else {
+      $('pointA').textContent = engine.pointLabel(m, 0);
+      $('pointB').textContent = engine.pointLabel(m, 1);
+      $('gamesA').textContent = m.games[0];
+      $('gamesB').textContent = m.games[1];
+      setClass($('pointA'), 'point', 'pt-a');
+      setClass($('pointB'), 'point', 'pt-b');
+      setClass($('gamesA'), 'games', 'gm-on');
+      setClass($('gamesB'), 'games', 'gm-on');
+      setClass($('dotA'), 'dot', server === 0 ? 'dot-a' : '');
+      setClass($('dotB'), 'dot', server === 1 ? 'dot-b' : '');
+    }
+
+    setClass($('undoText'), 'btn-text', engine.canUndo(m) ? '' : 'btn-text-off');
+    applyStatus(m, status);
+  }
+
+  function applyStatus(m, status) {
+    var el = $('status');
+    var text = '';
+    var cls = 'st-none';
+    if (m.finished) {
+      text = 'VICTOIRE ' + m.config.teams[m.winner];
+      cls = m.winner === 0 ? 'st-a' : 'st-b';
+    } else if (m.changeEnds) {
+      text = 'CHANGEMENT DE COTE';
+      cls = 'st-warn';
+    } else {
+      var a = status.teams[0], b = status.teams[1];
+      if (a && b) {
+        var best = BALL_RANK[a] >= BALL_RANK[b] ? a : b;
+        text = best === 'game' && status.golden ? 'POINT EN OR' : BALL_LABELS[best];
+        cls = 'st-warn';
+      } else if (a || b) {
+        text = BALL_LABELS[a || b];
+        cls = a ? 'st-a' : 'st-b';
+      }
+    }
+    el.textContent = text || '.';
+    setClass(el, 'status-text', cls);
+  }
+
+  function buzz(ms) {
+    if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* ignore */ } }
+  }
+
+  function addPoint(team) {
+    if (match.finished) return;
+    cancelConfirm();
+    var setsBefore = match.setHistory.length;
+    var gamesBefore = match.games[0] + match.games[1];
+    engine.addPoint(match, team);
+    var gameEnded = match.finished || match.setHistory.length !== setsBefore ||
+      match.games[0] + match.games[1] !== gamesBefore;
+    buzz(gameEnded ? 120 : 25);
+    save();
+    refresh();
+  }
+
+  function undo() {
+    if (!engine.undo(match)) return;
+    cancelConfirm();
+    buzz(25);
+    save();
+    refresh();
+  }
+
+  function confirmNeeded() {
+    if (match.finished) return false;
+    return match.sets[0] + match.sets[1] + match.games[0] + match.games[1] +
+      match.points[0] + match.points[1] > 0;
+  }
+
+  function cancelConfirm() {
+    if (confirmTimer) { clearTimeout(confirmTimer); confirmTimer = null; }
+    $('newText').textContent = 'NOUVEAU';
+    $('btnNew').classList.remove('btn-danger');
+  }
+
+  function newMatch() {
+    if (confirmNeeded() && $('newText').textContent !== 'CONFIRMER') {
+      $('newText').textContent = 'CONFIRMER';
+      $('btnNew').classList.add('btn-danger');
+      confirmTimer = setTimeout(cancelConfirm, 4000);
+      return;
+    }
+    start();
+  }
+
+  function start() {
+    cancelConfirm();
+    match = engine.createMatch(rules);
+    buzz(120);
+    save();
+    refresh();
+  }
+
+  /* --- reglages hors montre --- */
+  function bindRule(id, read, write) {
+    var el = $(id);
+    el.setAttribute('aria-pressed', String(read()));
+    el.addEventListener('click', function () {
+      write();
+      el.setAttribute('aria-pressed', String(read()));
+      start();
+    });
+  }
+
+  $('sideA').addEventListener('click', function () { addPoint(0); });
+  $('sideB').addEventListener('click', function () { addPoint(1); });
+  $('btnUndo').addEventListener('click', undo);
+  $('btnNew').addEventListener('click', newMatch);
+  $('btnSettings').addEventListener('click', function () {
+    alert('Sur la montre, ce bouton ouvre la page Reglages.\nDans le simulateur, utilisez les boutons REGLES sous le cadre.');
+  });
+
+  bindRule('ruleGolden', function () { return rules.goldenPoint; },
+    function () { rules.goldenPoint = !rules.goldenPoint; });
+  bindRule('ruleSuperTb', function () { return rules.superTieBreak; },
+    function () { rules.superTieBreak = !rules.superTieBreak; });
+  bindRule('ruleFormat', function () { return rules.setsToWin === 2; },
+    function () { rules.setsToWin = rules.setsToWin === 2 ? 1 : 2; });
+
+  document.addEventListener('keydown', function (e) {
+    var k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') { addPoint(0); e.preventDefault(); }
+    else if (k === 'arrowright' || k === 'p') { addPoint(1); e.preventDefault(); }
+    else if (k === 'z') { undo(); e.preventDefault(); }
+    else if (k === 'n') { newMatch(); e.preventDefault(); }
+  });
+
+  match = load();
+  if (match) {
+    rules.goldenPoint = match.config.goldenPoint;
+    rules.superTieBreak = match.config.superTieBreak;
+    rules.setsToWin = match.config.setsToWin;
+    $('ruleGolden').setAttribute('aria-pressed', String(rules.goldenPoint));
+    $('ruleSuperTb').setAttribute('aria-pressed', String(rules.superTieBreak));
+    $('ruleFormat').setAttribute('aria-pressed', String(rules.setsToWin === 2));
+    refresh();
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>
