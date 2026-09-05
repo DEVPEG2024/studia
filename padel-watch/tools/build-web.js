@@ -54,6 +54,14 @@ if (/<\/script/i.test(engine)) {
 
 let bundled = page.replace(TAG, '<script>\n' + engine + '\n</script>');
 
+// Version lisible dans le diagnostic : sans elle, impossible de savoir si un
+// utilisateur regarde la page fraîche ou une copie encore en cache.
+const stamp =
+  crypto.createHash('sha256').update(bundled).digest('hex').slice(0, 7) +
+  ' · ' +
+  new Date().toISOString().slice(0, 16).replace('T', ' ');
+bundled = bundled.split('__BUILD__').join(stamp);
+
 if (ARTIFACT) {
   // L'hote fournit deja <!doctype>, <html>, <head> et <body> : on ne garde
   // que le titre, les styles et le contenu.

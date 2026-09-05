@@ -112,6 +112,11 @@
   .diag b { color: #2ee6a8; font-weight: 600; }
   .diag i { color: #fbbf24; font-style: normal; }
   .sheet-close { display: none; }
+  .sheet-update {
+    display: block; width: 100%; margin-top: 10px; padding: 10px;
+    background: #14161a; border: 1px solid #2f343c; border-radius: 10px;
+    color: #9ca3af; font: inherit; font-size: 12px; cursor: pointer;
+  }
 
   /* --- telephone : l'app occupe tout l'ecran, les moities deviennent
          de grandes cibles tactiles --- */
@@ -207,6 +212,7 @@
     <kbd>Z</kbd> annuler, <kbd>N</kbd> nouveau match.
   </p>
   <pre class="diag" id="diag">diagnostic…</pre>
+  <button class="sheet-update" id="forceUpdate">FORCER LA MISE À JOUR</button>
   <button class="sheet-close" id="sheetClose">FERMER</button>
 </div>
 
@@ -587,6 +593,8 @@
   var BALL_LABELS = { game: 'BALLE DE JEU', set: 'BALLE DE SET', match: 'BALLE DE MATCH' };
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
+  // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
+  var BUILD = '859536b · 2026-09-05 17:44';
 
   var rules = { goldenPoint: true, superTieBreak: false, setsToWin: 2 };
   var match = null;
@@ -1023,6 +1031,12 @@
     if (!el) return;
     var rows = [];
 
+    rows.push('version        : ' + (BUILD.indexOf('__') === 0 ? 'source (non compilée)' : BUILD));
+    rows.push('règles         : ' +
+      (rules.goldenPoint ? 'point en or' : 'AVANTAGES') + ' · ' +
+      (rules.setsToWin === 2 ? '3 sets' : '1 set') +
+      (rules.superTieBreak ? ' · super tie-break' : ''));
+
     rows.push(diagLine('page installée ',
       window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches,
       window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches
@@ -1089,6 +1103,26 @@
   });
   $('sheetClose').addEventListener('click', function () {
     document.body.classList.remove('show-rules');
+  });
+
+  // Sortie de secours : vide le cache et retire le service worker, puis
+  // recharge. Le match en cours est dans localStorage, il survit.
+  $('forceUpdate').addEventListener('click', function () {
+    var el = $('forceUpdate');
+    el.textContent = 'MISE À JOUR…';
+    var reload = function () { location.reload(); };
+    var jobs = [];
+    if ('caches' in window) {
+      jobs.push(caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      }));
+    }
+    if ('serviceWorker' in navigator) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+        return Promise.all(regs.map(function (r) { return r.unregister(); }));
+      }));
+    }
+    Promise.all(jobs).then(reload, reload);
   });
 
   bindRule('ruleGolden', function () { return rules.goldenPoint; },
