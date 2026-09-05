@@ -199,6 +199,37 @@ que celui de Notify — d'où le second rang.
 Dans les deux cas, la règle est la même : **ne jamais dissocier la montre**,
 sous peine d'invalider la clé et de tout réinitialiser.
 
+#### Variante sans téléphone : émulateur Android + dongle Bluetooth USB
+
+Un émulateur seul ne suffit pas. Le Bluetooth de l'émulateur Android est
+*RootCanal*, un contrôleur virtuel : il ne relie que des émulateurs entre eux
+et ne voit aucun appareil réel. Et le Bluetooth intégré d'un Mac ne peut pas
+lui être prêté — Darwin interdit à l'espace utilisateur de parler directement
+au contrôleur, y compris en `sudo` ; tout passe par CoreBluetooth, qui
+n'expose pas les paquets HCI.
+
+Il faut donc fournir une **seconde radio physique** : un dongle Bluetooth USB,
+ponté vers l'émulateur avec *Bumble*, la pile Bluetooth Python de Google.
+
+```bash
+# AVD API 33+ démarré, dongle branché
+pip install bumble
+sudo python3 -m bumble.apps.hci_bridge \
+     android-netsim:_:8554,mode=controller usb:0
+```
+
+Puis, dans l'émulateur, **Gadgetbridge** plutôt que Notify : c'est un APK
+autonome installable via `adb install`, là où Notify vient du Play Store et
+exigerait une image système avec les services Google et une connexion à un
+compte.
+
+À réserver au cas où aucun Android n'est atteignable : la chaîne compte cinq
+maillons au lieu d'un, chacun avec ses propres échecs possibles (macOS a
+tendance à réclamer le dongle pour lui, l'appairage netsim est capricieux).
+Je ne l'ai pas testée — je n'ai ici ni dongle, ni montre, ni accès au CDN
+nécessaire.
+
+
 > **Non vérifié sur appareil.** Le projet compile avec la chaîne officielle
 > Xiaomi et produit un `.rpk` Vela signé ; le moteur de score est couvert par
 > 21 tests et l'interface a été rendue et pilotée au pixel dans un navigateur à
