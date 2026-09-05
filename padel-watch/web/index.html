@@ -2,7 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Padel">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
 <title>Padel - simulateur Redmi Watch 4</title>
 <style>
   :root { color-scheme: dark; }
@@ -47,7 +52,7 @@
     cursor: pointer; height: 100%;
     -webkit-tap-highlight-color: transparent;
   }
-  .side:active { background: #0c0e11; }
+  .side.tapped { background: #101319; transition: background .18s ease-out; }
   .divider { width: 1px; height: 200px; background: #1f2329; }
   .team-row { display: flex; flex-direction: row; align-items: center; justify-content: center; height: 20px; }
   .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: #000; }
@@ -95,6 +100,47 @@
   }
   .rules button[aria-pressed="true"] { border-color: #2ee6a8; color: #2ee6a8; }
   .hint { color: #6b7280; margin: 0; }
+  .sheet-close { display: none; }
+
+  /* --- telephone : l'app occupe tout l'ecran, les moities deviennent
+         de grandes cibles tactiles --- */
+  @media (max-width: 559px), (pointer: coarse) and (max-width: 900px) {
+    body { padding: 0; gap: 0; display: block; background: #000; }
+    .watch {
+      width: 100vw; height: 100vh; height: 100dvh;
+      border-radius: 0; box-shadow: none;
+      padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+    }
+    .header { height: 12%; min-height: 56px; }
+    .phase { font-size: 4vw; }
+    .summary { font-size: 4.6vw; }
+    .team { font-size: 4.4vw; }
+    .point { font-size: 26vw; line-height: 1.05; height: auto; }
+    .games { font-size: 9vw; }
+    .divider { height: 62%; background: #23272e; }
+    .status { height: 8%; min-height: 30px; }
+    .status-text { font-size: 4.4vw; }
+    .bar { height: 14%; min-height: 60px; }
+    .btn { height: 88%; max-height: 64px; }
+    .btn-text { font-size: 3.6vw; }
+
+    .panel {
+      position: fixed; left: 0; right: 0; bottom: 0; width: 100%;
+      border-radius: 18px 18px 0 0;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      transform: translateY(105%);
+      transition: transform .22s ease;
+      box-shadow: 0 -12px 40px rgba(0,0,0,.6);
+    }
+    body.show-rules .panel { transform: none; }
+    .hint { display: none; }
+    .sheet-close {
+      display: block; width: 100%; margin-top: 10px; padding: 10px;
+      background: #14161a; border: 0; border-radius: 10px;
+      color: #d1d5db; font: inherit; font-size: 13px; cursor: pointer;
+    }
+  }
+
   kbd {
     background: #0d0f12; border: 1px solid #2f343c; border-radius: 4px;
     padding: 1px 5px; font-size: 11px; font-family: ui-monospace, monospace;
@@ -132,7 +178,7 @@
   </div>
 </div>
 
-<div class="panel">
+<div class="panel" id="panel">
   <h2>REGLES (relance un match)</h2>
   <div class="rules">
     <button id="ruleGolden" aria-pressed="true">Point en or</button>
@@ -144,6 +190,7 @@
     Clavier : <kbd>&larr;</kbd> ou <kbd>A</kbd> pour NOUS, <kbd>&rarr;</kbd> ou <kbd>P</kbd> pour EUX,
     <kbd>Z</kbd> annuler, <kbd>N</kbd> nouveau match.
   </p>
+  <button class="sheet-close" id="sheetClose">FERMER</button>
 </div>
 
 <script src="../src/common/padel-engine.js"></script>
@@ -304,16 +351,25 @@
     el.addEventListener('click', function () {
       write();
       el.setAttribute('aria-pressed', String(read()));
+      document.body.classList.remove('show-rules');
       start();
     });
   }
 
-  $('sideA').addEventListener('click', function () { addPoint(0); });
-  $('sideB').addEventListener('click', function () { addPoint(1); });
+  function flash(el) {
+    el.classList.add('tapped');
+    setTimeout(function () { el.classList.remove('tapped'); }, 130);
+  }
+  $('sideA').addEventListener('click', function () { flash(this); addPoint(0); });
+  $('sideB').addEventListener('click', function () { flash(this); addPoint(1); });
   $('btnUndo').addEventListener('click', undo);
   $('btnNew').addEventListener('click', newMatch);
   $('btnSettings').addEventListener('click', function () {
-    alert('Sur la montre, ce bouton ouvre la page Reglages.\nDans le simulateur, utilisez les boutons REGLES sous le cadre.');
+    document.body.classList.toggle('show-rules');
+    $('panel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+  $('sheetClose').addEventListener('click', function () {
+    document.body.classList.remove('show-rules');
   });
 
   bindRule('ruleGolden', function () { return rules.goldenPoint; },

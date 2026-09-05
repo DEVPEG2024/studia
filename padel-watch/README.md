@@ -57,18 +57,23 @@ Tout est réglable depuis l'écran **REGLAGES** de la montre. Un changement de
 règle s'applique au **prochain** match — sauf si l'on utilise le bouton
 `APPLIQUER + NOUVEAU MATCH`, qui relance immédiatement.
 
-## Essayer tout de suite, sans la montre
+## La même app sur téléphone
 
-Le simulateur reprend le moteur de score **et** la maquette exacte
-(390 × 450 px, la dalle de la Redmi Watch 4) :
+`web/index.html` fait tourner **le même moteur de score** dans un navigateur.
+Sur un grand écran il rend la maquette exacte de la montre (390 × 450 px), ce
+qui sert à travailler l'interface ; sur téléphone il passe en plein écran, avec
+les deux moitiés comme grandes cibles tactiles. C'est un compteur pleinement
+utilisable au bord du terrain — et le seul recours quand la montre est
+inaccessible (voir « Installer » plus bas).
 
 ```bash
-npm run web          # puis ouvrir http://localhost:8080/
+npm run web            # http://localhost:8080/
+npm run web:build      # -> dist/padel-web.html, page autonome d'un seul fichier
+npm run web:artifact   # -> dist/padel-artifact.html, à publier comme Artifact
 ```
 
-`web/index.html` s'ouvre aussi directement dans un navigateur. Clavier :
-`←`/`A` pour NOUS, `→`/`P` pour EUX, `Z` annuler, `N` nouveau match. Les trois
-boutons sous le cadre permettent de tester les variantes de règles.
+Clavier : `←`/`A` pour NOUS, `→`/`P` pour EUX, `Z` annuler, `N` nouveau match.
+Le bouton `REGLAGES` ouvre les variantes de règles.
 
 ## Construire le `.rpk`
 
