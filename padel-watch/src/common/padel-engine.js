@@ -27,7 +27,7 @@
   function defaultConfig() {
     return {
       teams: ['NOUS', 'EUX'],
-      goldenPoint: true,          // true = point en or a 40-40, false = avantages
+      goldenPoint: false,         // false = avantages (defaut), true = point en or a 40-40
       gamesPerSet: 6,
       tieBreakAt: 6,              // jeu decisif quand les deux equipes atteignent ce total
       tieBreakPoints: 7,

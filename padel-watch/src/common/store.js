@@ -9,7 +9,7 @@ const KEY_MATCH = 'padel.match.v1'
 const KEY_RESET = 'padel.reset.v1'
 
 const DEFAULT_SETTINGS = {
-  goldenPoint: true,
+  goldenPoint: false,
   superTieBreak: false,
   setsToWin: 2,
   vibration: true,

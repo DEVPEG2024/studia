@@ -197,7 +197,7 @@
 <div class="panel" id="panel">
   <h2>REGLES (relance un match)</h2>
   <div class="rules">
-    <button id="ruleGolden" aria-pressed="true">Point en or</button>
+    <button id="ruleGolden" aria-pressed="false">Point en or</button>
     <button id="ruleSuperTb" aria-pressed="false">Super tie-break au 3e set</button>
     <button id="ruleFormat" aria-pressed="true">3 sets</button>
     <button id="ruleAwake" aria-pressed="false" hidden>Écran allumé</button>
@@ -225,7 +225,7 @@
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
   var BUILD = '__BUILD__';
 
-  var rules = { goldenPoint: true, superTieBreak: false, setsToWin: 2 };
+  var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
   var confirmTimer = null;
 

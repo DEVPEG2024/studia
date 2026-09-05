@@ -199,7 +199,7 @@
 <div class="panel" id="panel">
   <h2>REGLES (relance un match)</h2>
   <div class="rules">
-    <button id="ruleGolden" aria-pressed="true">Point en or</button>
+    <button id="ruleGolden" aria-pressed="false">Point en or</button>
     <button id="ruleSuperTb" aria-pressed="false">Super tie-break au 3e set</button>
     <button id="ruleFormat" aria-pressed="true">3 sets</button>
     <button id="ruleAwake" aria-pressed="false" hidden>Écran allumé</button>
@@ -246,7 +246,7 @@
   function defaultConfig() {
     return {
       teams: ['NOUS', 'EUX'],
-      goldenPoint: true,          // true = point en or a 40-40, false = avantages
+      goldenPoint: false,         // false = avantages (defaut), true = point en or a 40-40
       gamesPerSet: 6,
       tieBreakAt: 6,              // jeu decisif quand les deux equipes atteignent ce total
       tieBreakPoints: 7,
@@ -594,9 +594,9 @@
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
-  var BUILD = '4802a17 · 2026-09-05 17:52';
+  var BUILD = 'd65f14f · 2026-09-05 17:59';
 
-  var rules = { goldenPoint: true, superTieBreak: false, setsToWin: 2 };
+  var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
   var confirmTimer = null;
 

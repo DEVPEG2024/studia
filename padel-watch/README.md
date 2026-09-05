@@ -48,7 +48,7 @@ C'est ce que produit ce dépôt.
 | Règle | Détail |
 |---|---|
 | Points | 0 / 15 / 30 / 40 |
-| 40-40 | **point en or** (défaut) ou avantages classiques |
+| 40-40 | **avantages** (défaut) : `40-40`, puis `40-AV`, puis le jeu — et retour à `40-40` si l'adversaire reprend le point. Le **point en or** (un seul point à 40-40) est disponible dans les réglages. |
 | Set | 6 jeux avec 2 jeux d'écart |
 | 6-6 | jeu décisif en 7 points, 2 points d'écart |
 | Match | 2 sets gagnants (défaut) ou 1 set sec |
