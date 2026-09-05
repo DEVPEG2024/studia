@@ -211,9 +211,15 @@ n'expose pas les paquets HCI.
 Il faut donc fournir une **seconde radio physique** : un dongle Bluetooth USB,
 ponté vers l'émulateur avec *Bumble*, la pile Bluetooth Python de Google.
 
+Le piège est que macOS s'empare de tout contrôleur Bluetooth USB avec sa
+propre pile. Bumble documente le réglage qui l'en empêche :
+
 ```bash
-# AVD API 33+ démarré, dongle branché
+sudo nvram bluetoothHostControllerSwitchBehavior="never"   # puis redémarrer
+brew install libusb
 pip install bumble
+
+# AVD API 33+ démarré, dongle branché
 sudo python3 -m bumble.apps.hci_bridge \
      android-netsim:_:8554,mode=controller usb:0
 ```
@@ -223,11 +229,18 @@ autonome installable via `adb install`, là où Notify vient du Play Store et
 exigerait une image système avec les services Google et une connexion à un
 compte.
 
-À réserver au cas où aucun Android n'est atteignable : la chaîne compte cinq
-maillons au lieu d'un, chacun avec ses propres échecs possibles (macOS a
-tendance à réclamer le dongle pour lui, l'appairage netsim est capricieux).
-Je ne l'ai pas testée — je n'ai ici ni dongle, ni montre, ni accès au CDN
-nécessaire.
+`npm run doctor` passe en revue les sept prérequis de cette variante — paquet,
+clé Bluetooth, dongle, réglage nvram, bumble et libusb, émulateur,
+Gadgetbridge — et indique lequel manque, avec la commande pour le combler. Le
+script ne modifie rien, il constate.
+
+J'ai écarté la variante machine virtuelle Android-x86 sous UTM : la capture
+USB par macOS y empêche une réinitialisation matérielle propre du
+périphérique, et le passage d'un dongle y est notoirement instable. Le pont
+Bumble est le montage le mieux documenté.
+
+Chaîne non testée de mon côté — je n'ai ici ni dongle ni montre. Le point le
+plus capricieux reste l'appairage netsim entre le pont et l'émulateur.
 
 
 > **Non vérifié sur appareil.** Le projet compile avec la chaîne officielle
