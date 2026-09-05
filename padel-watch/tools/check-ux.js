@@ -41,6 +41,36 @@ function checkFile(file) {
       errors.push('script invalide : ' + e.message);
     }
 
+    // Une const ou let utilisee avant sa declaration passe la verification de
+    // syntaxe mais leve une ReferenceError a l'execution. On cherche donc,
+    // methode par methode, un usage qui precede la declaration.
+    const bodyRe = /^ {2}([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{$/gm;
+    let mb;
+    while ((mb = bodyRe.exec(script)) !== null) {
+      const from = mb.index + mb[0].length;
+      const close = script.indexOf('\n  },', from);
+      const body = script.slice(from, close === -1 ? script.length : close);
+      // Commentaires et chaines contiennent des mots ordinaires : les blanchir
+      // evite de prendre le « a » d'une phrase pour la variable a.
+      const code = body
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/\/\/[^\n]*/g, ' ')
+        .replace(/'(?:\\.|[^'\\])*'/g, "''")
+        .replace(/"(?:\\.|[^"\\])*"/g, '""')
+        .replace(/`(?:\\.|[^`\\])*`/g, '``');
+      const declRe = /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=/g;
+      let md;
+      while ((md = declRe.exec(code)) !== null) {
+        const name = md[1];
+        const before = code.slice(0, md.index);
+        if (new RegExp('\\b' + name + '\\b').test(before)) {
+          errors.push(
+            'dans ' + mb[1] + '() : "' + name + '" est utilisee avant sa declaration'
+          );
+        }
+      }
+    }
+
     if (template) {
       const handlers = new Set();
       const methodRe = /^\s{2}([A-Za-z_$][\w$]*)\s*\(/gm;

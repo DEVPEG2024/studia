@@ -1,16 +1,18 @@
 <template>
   <div class="page">
 
-    <!-- Ligne de match : ou on en est, et ce qui est deja joue -->
+    <!-- Bandeau mince : la phase, et les sets deja joues -->
     <div class="matchline">
       <text class="phase">{{ phaseText }}</text>
       <text class="history">{{ historyText }}</text>
     </div>
 
-    <!-- Le terrain : la moitie gauche compte pour NOUS, la droite pour EUX -->
-    <div class="court">
+    <!-- Le terrain : la moitie gauche compte pour NOUS, la droite pour EUX.
+         Le camp au service porte sa plaque pleine, lisible en plein soleil. -->
+    <div class="field">
+      <div class="court">
       <div class="half" onclick="scoreA">
-        <div class="plate">
+        <div class="plate {{ plateClassA }}">
           <text class="team {{ teamClassA }}">{{ teamA }}</text>
           <text class="sets {{ setsClassA }}">{{ setsA }}</text>
         </div>
@@ -24,7 +26,7 @@
       <div class="net"></div>
 
       <div class="half" onclick="scoreB">
-        <div class="plate">
+        <div class="plate {{ plateClassB }}">
           <text class="team {{ teamClassB }}">{{ teamB }}</text>
           <text class="sets {{ setsClassB }}">{{ setsB }}</text>
         </div>
@@ -34,20 +36,19 @@
           <text class="games-l">JEUX</text>
         </div>
       </div>
+      </div>
+
+      <!-- Etat de la balle : colle au score, dont il fait partie -->
+      <div class="ballstate">
+        <text class="status-text {{ statusClass }}">{{ statusText }}</text>
+      </div>
     </div>
 
-    <!-- Etat de la balle : egalite, avantage, balle de jeu, changement de cote -->
-    <div class="ballstate">
-      <text class="status-text {{ statusClass }}">{{ statusText }}</text>
-    </div>
-
-    <!-- Commandes, ponderees par la frequence d'usage -->
+    <!-- Deux commandes seulement : « nouveau match » vit dans les reglages,
+         ou une faute de frappe ne coute pas le score en cours. -->
     <div class="bar">
       <div class="btn btn-wide" onclick="undoPoint">
         <text class="btn-text {{ undoClass }}">ANNULER</text>
-      </div>
-      <div class="btn {{ newBtnClass }}" onclick="newMatch">
-        <text class="btn-text">{{ newLabel }}</text>
       </div>
       <div class="btn" onclick="openSettings">
         <text class="btn-text">REGLAGES</text>
@@ -58,39 +59,46 @@
 </template>
 
 <style>
-/* Un terrain de padel vu du dessus. Vela ne gere pas les degrades :
-   la meme charte que la version telephone, transposee en aplats. */
+/* Un terrain de padel vu du dessus, pense pour 390 x 450 : le point occupe
+   le tiers de la dalle, tout le reste est rogne. Vela ne gere pas les
+   degrades, la charte du telephone est transposee en aplats. */
 .page {
   flex: 1;
   flex-direction: column;
   background-color: #0a1018;
 }
 
-/* --- ligne de match --- */
+/* --- bandeau mince : 30 px, pas 44 --- */
 .matchline {
-  height: 44px;
+  height: 30px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom-width: 1px;
-  border-bottom-color: #22303f;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 .phase {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   color: #6b7f93;
 }
 .history {
-  font-size: 13px;
-  color: #6b7f93;
+  font-size: 12px;
+  color: #4d5f70;
   text-align: right;
 }
 
 /* --- les deux camps --- */
-.court {
+/* Le score et l'etat de la balle forment un bloc, centre d'un seul tenant :
+   sinon l'oeil traverse deux vides avant d'atteindre l'information. */
+.field {
   flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  border-top-width: 1px;
+  border-top-color: #1a2532;
+}
+.court {
   flex-direction: row;
   align-items: center;
 }
@@ -99,48 +107,51 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 .net {
   width: 2px;
-  height: 190px;
+  height: 150px;
   background-color: #22303f;
 }
 
-/* Plaque d'equipe : le nom, et les sets qui lui appartiennent.
-   Le camp au service a son nom allume — a defaut de degrade. */
+/* Plaque d'equipe. Au service, elle se remplit de la couleur du camp :
+   a bout de bras, un aplat se voit, une pastille non. */
 .plate {
   flex-direction: row;
   align-items: center;
-  height: 22px;
+  height: 24px;
+  border-radius: 12px;
+  padding-left: 9px;
+  padding-right: 9px;
+  margin-bottom: 6px;
 }
+.pl-a { background-color: #e4f24a; }
+.pl-b { background-color: #57b0ff; }
 .team {
   font-size: 13px;
   font-weight: bold;
   color: #6b7f93;
   margin-right: 6px;
 }
-.tm-a { color: #e4f24a; }
-.tm-b { color: #57b0ff; }
+.tm-on { color: #0a1018; }
 .sets {
   font-size: 13px;
   font-weight: bold;
   color: #6b7f93;
-  border-width: 1px;
-  border-color: #22303f;
-  border-radius: 5px;
-  padding-left: 6px;
-  padding-right: 6px;
   text-align: center;
 }
-.st-won-a { color: #e4f24a; border-color: #6c7420; }
-.st-won-b { color: #57b0ff; border-color: #2a5578; }
+.sn-a { color: #e4f24a; }
+.sn-b { color: #57b0ff; }
+.sn-on { color: #0a1018; }
 
 .point {
-  font-size: 96px;
+  font-size: 104px;
   font-weight: bold;
   text-align: center;
   width: 100%;
-  height: 112px;
+  height: 128px;
 }
 .pt-a { color: #e4f24a; }
 .pt-b { color: #57b0ff; }
@@ -149,10 +160,10 @@
 .games {
   flex-direction: row;
   align-items: flex-end;
-  height: 30px;
+  height: 28px;
 }
 .games-n {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: bold;
   color: #e8eef5;
   margin-right: 4px;
@@ -166,7 +177,8 @@
 
 /* --- etat de la balle --- */
 .ballstate {
-  height: 34px;
+  height: 28px;
+  margin-top: 10px;
   justify-content: center;
   align-items: center;
 }
@@ -182,9 +194,9 @@
 .sl-warn { color: #ffb340; }
 .sl-neutral { color: #e8eef5; }
 
-/* --- commandes --- */
+/* --- deux commandes --- */
 .bar {
-  height: 58px;
+  height: 52px;
   flex-direction: row;
   align-items: center;
   padding-left: 10px;
@@ -193,7 +205,7 @@
 }
 .btn {
   flex: 1;
-  height: 44px;
+  height: 42px;
   background-color: #131c27;
   border-width: 1px;
   border-color: #22303f;
@@ -203,8 +215,7 @@
   justify-content: center;
   align-items: center;
 }
-.btn-wide { flex: 1.5; }
-.btn-danger { background-color: #3a1620; border-color: #6d2233; }
+.btn-wide { flex: 1.7; }
 .btn-text {
   font-size: 12px;
   font-weight: bold;
@@ -225,7 +236,6 @@ import store from '../../common/store.js'
 // qu'il serait inutile (et couteux) d'observer.
 let match = null
 let settings = null
-let confirmTimer = null
 
 const BALL_LABELS = { game: 'BALLE DE JEU', set: 'BALLE DE SET', match: 'BALLE DE MATCH' }
 const BALL_RANK = { game: 1, set: 2, match: 3 }
@@ -238,10 +248,12 @@ export default {
     historyText: '',
     setsA: '0',
     setsB: '0',
-    setsClassA: '',
-    setsClassB: '',
+    setsClassA: 'sn-a',
+    setsClassB: 'sn-b',
     teamClassA: '',
     teamClassB: '',
+    plateClassA: '',
+    plateClassB: '',
     pointA: '0',
     pointB: '0',
     gamesA: '0',
@@ -251,9 +263,7 @@ export default {
     finished: false,
     statusText: '',
     statusClass: 'sl-none',
-    undoClass: 'btn-text-off',
-    newLabel: 'NOUVEAU',
-    newBtnClass: ''
+    undoClass: 'btn-text-off'
   },
 
   onShow() {
@@ -275,12 +285,7 @@ export default {
     })
   },
 
-  onHide() {
-    this.cancelConfirm()
-  },
-
   onDestroy() {
-    this.cancelConfirm()
     device.keepScreenOn(false)
   },
 
@@ -305,7 +310,6 @@ export default {
 
   addPoint(team) {
     if (!match || match.finished) return
-    this.cancelConfirm()
     const setsBefore = match.setHistory.length
     const gamesBefore = match.games[0] + match.games[1]
     engine.addPoint(match, team)
@@ -320,57 +324,12 @@ export default {
 
   undoPoint() {
     if (!match || !engine.undo(match)) return
-    this.cancelConfirm()
     this.buzz('short')
     store.saveMatch(engine.serialize(match))
     this.refresh()
   },
 
-  newMatch() {
-    if (!this.confirmNeeded()) {
-      this.startNewMatch()
-      return
-    }
-    if (this.newLabel === 'CONFIRMER') {
-      this.startNewMatch()
-      return
-    }
-    const self = this
-    this.newLabel = 'CONFIRMER'
-    this.newBtnClass = 'btn-danger'
-    confirmTimer = setTimeout(function () {
-      confirmTimer = null
-      self.cancelConfirm()
-    }, 4000)
-  },
-
-  startNewMatch() {
-    this.cancelConfirm()
-    match = engine.createMatch(this.configFromSettings())
-    store.saveMatch(engine.serialize(match))
-    this.buzz('long')
-    this.refresh()
-  },
-
-  /** Inutile de confirmer si le match n'a pas commence ou est deja fini. */
-  confirmNeeded() {
-    if (!match || match.finished) return false
-    return (
-      match.sets[0] + match.sets[1] + match.games[0] + match.games[1] + match.points[0] + match.points[1] > 0
-    )
-  },
-
-  cancelConfirm() {
-    if (confirmTimer) {
-      clearTimeout(confirmTimer)
-      confirmTimer = null
-    }
-    this.newLabel = 'NOUVEAU'
-    this.newBtnClass = ''
-  },
-
   openSettings() {
-    this.cancelConfirm()
     try {
       router.push({ uri: '/pages/Settings' })
     } catch (e) {
@@ -405,12 +364,15 @@ export default {
     this.historyText = engine.setSummary(m).join(' · ')
     this.setsA = String(m.sets[0])
     this.setsB = String(m.sets[1])
-    this.setsClassA = m.sets[0] > 0 ? 'st-won-a' : ''
-    this.setsClassB = m.sets[1] > 0 ? 'st-won-b' : ''
-
-    // Faute de degrade, le camp au service a son nom allume.
-    this.teamClassA = !m.finished && server === 0 ? 'tm-a' : ''
-    this.teamClassB = !m.finished && server === 1 ? 'tm-b' : ''
+    // Au service, la plaque se remplit : un aplat se voit a bout de bras.
+    const servingA = !m.finished && server === 0
+    const servingB = !m.finished && server === 1
+    this.plateClassA = servingA ? 'pl-a' : ''
+    this.plateClassB = servingB ? 'pl-b' : ''
+    this.teamClassA = servingA ? 'tm-on' : ''
+    this.teamClassB = servingB ? 'tm-on' : ''
+    this.setsClassA = servingA ? 'sn-on' : 'sn-a'
+    this.setsClassB = servingB ? 'sn-on' : 'sn-b'
 
     if (m.finished) {
       // Points et jeux sont remis a zero : on affiche les sets gagnes.

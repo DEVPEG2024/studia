@@ -15,7 +15,7 @@
       </list-item>
 
       <list-item type="apply" class="apply" onclick="applyAndRestart">
-        <text class="apply-text">APPLIQUER + NOUVEAU MATCH</text>
+        <text class="apply-text">NOUVEAU MATCH</text>
       </list-item>
 
       <list-item type="back" class="back" onclick="goBack">

@@ -15,7 +15,8 @@
     "web:build": "node tools/build-web.js",
     "web:artifact": "node tools/build-web.js --artifact --title=\"Compteur Padel\"",
     "doctor": "bash tools/doctor-macos.sh",
-    "web:pwa": "node tools/build-web.js --pwa"
+    "web:pwa": "node tools/build-web.js --pwa",
+    "preview": "node tools/preview-watch.js"
   },
   "devDependencies": {
     "aiot-toolkit": "^2.0.5"

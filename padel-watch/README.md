@@ -53,6 +53,32 @@ espacées pour les étiquettes.
 - **Écran maintenu allumé** pendant la partie (désactivable).
 - **Reprise automatique** : le match en cours est relu au démarrage.
 
+## L'écran de la montre
+
+390 × 450, regardé une seconde entre deux échanges, souvent en plein soleil,
+manipulé une raquette à la main. La contrainte n'est pas celle du téléphone,
+la mise en page non plus.
+
+- **Le camp au service porte sa plaque pleine**, dans sa couleur. À bout de
+  bras un aplat se voit, une pastille de dix pixels non.
+- **Deux commandes, pas trois.** « Nouveau match » vit dans les réglages :
+  sur une dalle de 1,97 pouce, une action destructive n'a rien à faire à côté
+  d'ANNULER, qu'on touche à chaque erreur.
+- **Le score et l'état de la balle forment un bloc**, centré d'un seul tenant.
+  Séparés, l'œil traversait deux vides avant d'atteindre l'information.
+- Le bandeau d'historique tient en 30 px : la phase et les sets joués sont
+  utiles une fois par set, pas à chaque point.
+
+```bash
+npm run preview      # -> dist/preview-montre.html
+```
+
+Faute d'appareil et d'accès à l'émulateur Vela, c'est ainsi que cet écran a
+été dessiné : l'outil rend le vrai `.ux` dans un navigateur, à la taille de la
+dalle, en reproduisant ce qui décide de la mise en page — les `<div>` en flex
+ligne par défaut, les `<text>` en bloc, `border-width` sans `border-style`.
+Ce n'est pas l'appareil, mais c'est la géométrie de l'appareil.
+
 ## Règles gérées
 
 | Règle | Détail |
