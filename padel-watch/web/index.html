@@ -14,6 +14,8 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
+    overscroll-behavior: none;
+    touch-action: manipulation;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -104,7 +106,7 @@
 
   /* --- telephone : l'app occupe tout l'ecran, les moities deviennent
          de grandes cibles tactiles --- */
-  @media (max-width: 559px), (pointer: coarse) and (max-width: 900px) {
+  @media (max-width: 559px), (pointer: coarse) and (max-height: 620px), (pointer: coarse) and (max-width: 900px) {
     body { padding: 0; gap: 0; display: block; background: #000; }
     .watch {
       width: 100vw; height: 100vh; height: 100dvh;
@@ -112,17 +114,17 @@
       padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
     }
     .header { height: 12%; min-height: 56px; }
-    .phase { font-size: 4vw; }
-    .summary { font-size: 4.6vw; }
-    .team { font-size: 4.4vw; }
-    .point { font-size: 26vw; line-height: 1.05; height: auto; }
-    .games { font-size: 9vw; }
+    .phase { font-size: 4vmin; }
+    .summary { font-size: 4.6vmin; }
+    .team { font-size: 4.4vmin; }
+    .point { font-size: 26vmin; line-height: 1.05; height: auto; }
+    .games { font-size: 9vmin; }
     .divider { height: 62%; background: #23272e; }
     .status { height: 8%; min-height: 30px; }
-    .status-text { font-size: 4.4vw; }
+    .status-text { font-size: 4.4vmin; }
     .bar { height: 14%; min-height: 60px; }
     .btn { height: 88%; max-height: 64px; }
-    .btn-text { font-size: 3.6vw; }
+    .btn-text { font-size: 3.6vmin; }
 
     .panel {
       position: fixed; left: 0; right: 0; bottom: 0; width: 100%;
@@ -184,6 +186,7 @@
     <button id="ruleGolden" aria-pressed="true">Point en or</button>
     <button id="ruleSuperTb" aria-pressed="false">Super tie-break au 3e set</button>
     <button id="ruleFormat" aria-pressed="true">3 sets</button>
+    <button id="ruleAwake" aria-pressed="false" hidden>Écran allumé</button>
   </div>
   <p class="hint">
     Touchez une moitie de l'ecran pour marquer.
@@ -344,6 +347,57 @@
     refresh();
   }
 
+  /* --- ecran maintenu allume : le telephone ne doit pas se verrouiller
+         entre deux points. Non garanti : l'API n'existe pas partout et peut
+         etre refusee (page embarquee, batterie faible). --- */
+  var WAKE_KEY = 'padel.wake.v1';
+  var wakeLock = null;
+  var wakeWanted = true;
+
+  try {
+    var saved = localStorage.getItem(WAKE_KEY);
+    if (saved !== null) wakeWanted = saved === '1';
+  } catch (e) { /* mode prive */ }
+
+  function wakeSupported() {
+    return typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  }
+
+  function paintWakeButton() {
+    var el = $('ruleAwake');
+    el.hidden = !wakeSupported();
+    el.setAttribute('aria-pressed', String(wakeWanted && !!wakeLock));
+  }
+
+  function acquireWake() {
+    if (!wakeSupported() || !wakeWanted || wakeLock || document.hidden) return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      wakeLock = lock;
+      lock.addEventListener('release', function () { wakeLock = null; paintWakeButton(); });
+      paintWakeButton();
+    }, function () {
+      // Refus definitif pour cette page : on cesse de demander.
+      wakeWanted = false;
+      paintWakeButton();
+    });
+  }
+
+  function releaseWake() {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+    paintWakeButton();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    acquireWake();
+  });
+
+  $('ruleAwake').addEventListener('click', function () {
+    wakeWanted = !wakeWanted;
+    try { localStorage.setItem(WAKE_KEY, wakeWanted ? '1' : '0'); } catch (e) { /* mode prive */ }
+    if (wakeWanted) acquireWake(); else releaseWake();
+  });
+
   /* --- reglages hors montre --- */
   function bindRule(id, read, write) {
     var el = $(id);
@@ -357,6 +411,7 @@
   }
 
   function flash(el) {
+    acquireWake();
     el.classList.add('tapped');
     setTimeout(function () { el.classList.remove('tapped'); }, 130);
   }
@@ -386,6 +441,8 @@
     else if (k === 'z') { undo(); e.preventDefault(); }
     else if (k === 'n') { newMatch(); e.preventDefault(); }
   });
+
+  paintWakeButton();
 
   match = load();
   if (match) {

@@ -72,6 +72,12 @@ npm run web:build      # -> dist/padel-web.html, page autonome d'un seul fichier
 npm run web:artifact   # -> dist/padel-artifact.html, à publier comme Artifact
 ```
 
+Sur téléphone : plein écran en portrait comme en paysage (appareil posé de
+chant au bord du terrain), zoom au double-tap et rebond élastique désactivés,
+et l'écran est maintenu allumé pendant le match via l'API Wake Lock quand le
+navigateur l'autorise — sinon le bouton correspondant disparaît et il faut
+régler le verrouillage automatique du téléphone sur « Jamais ».
+
 Clavier : `←`/`A` pour NOUS, `→`/`P` pour EUX, `Z` annuler, `N` nouveau match.
 Le bouton `REGLAGES` ouvre les variantes de règles.
 
