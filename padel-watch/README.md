@@ -51,9 +51,19 @@ espacées pour les étiquettes.
   voir le chiffre adverse retomber de `AV` à `40` après son propre point donne
   l'impression que les côtés sont inversés.
 - **Le geste a un retour.** Le point marqué atterrit — un bref rebond du
-  chiffre, qui confirme le tap sans qu'on ait à regarder. Un jeu gagné
-  illumine le camp d'un halo serré autour du score, plus long quand c'est un
-  set. Tout est coupé si le système demande à réduire les mouvements.
+  chiffre, qui confirme le tap sans qu'on ait à regarder.
+- **Le jeu qui bascule est une séquence, pas un effet.** La balle quitte le
+  camp qui vient de gagner, décrit une parabole au-dessus du terrain, fait
+  frémir le filet à son passage et se pose là où l'adversaire va servir — ce
+  qui vient réellement de se produire, le service change de camp. Le compteur
+  de jeux bascule ensuite comme un panneau de tableau d'affichage, puis les
+  points se reposent à zéro. Un set ajoute un temps : la plaque du camp
+  respire. Tout est coupé si le système demande à réduire les mouvements.
+
+  La trajectoire est une Bézier quadratique échantillonnée en vingt-six
+  images : le point de contrôle placé à mi-chemin garde une horizontale
+  linéaire et donne à la verticale une vraie parabole. Trois images-clés
+  auraient donné un trajet anguleux.
 - **Annulation point par point**, y compris à travers une fin de jeu ou de set.
 - **Vibration** courte sur un point, longue sur un jeu, un set ou le match.
 - **Écran maintenu allumé** pendant la partie (désactivable).

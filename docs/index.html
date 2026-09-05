@@ -88,7 +88,36 @@
   }
 
   /* --- les deux camps --- */
-  .court { flex: 1; display: flex; flex-direction: row; min-height: 0; }
+  .court { position: relative; flex: 1; display: flex; flex-direction: row; min-height: 0; }
+
+  /* Le jeu bascule : la balle traverse le filet et rejoint le camp qui va
+     servir. Elle vole au-dessus des deux moitiés, donc sur son propre calque. */
+  .volley {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .vball {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .vball::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    border-top: 2px solid rgba(10, 16, 24, .3);
+    border-bottom: 2px solid rgba(10, 16, 24, .3);
+  }
+  .vball.v-a { background: var(--ball); box-shadow: 0 0 22px 6px rgba(228, 242, 74, .45); }
+  .vball.v-b { background: var(--glass); box-shadow: 0 0 22px 6px rgba(87, 176, 255, .45); }
 
   .half {
     position: relative;
@@ -152,13 +181,6 @@
   }
   .point.land { animation: land .24s cubic-bezier(.2, 1.4, .4, 1); }
 
-  /* Le compteur de jeux prend le relais quand le point retombe à zéro. */
-  @keyframes pop {
-    0%   { transform: scale(1); }
-    45%  { transform: scale(1.4); }
-    100% { transform: scale(1); }
-  }
-  .games-n.pop { display: inline-block; animation: pop .5s cubic-bezier(.2, 1.5, .4, 1); }
 
   /* Le filet : deux montants et une maille, pas un simple trait. */
   .net {
@@ -435,7 +457,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .half::after, .panel, .ball { transition: none; }
-    .half::before, .point.land, .games-n.pop { animation: none; }
+    .half::before, .point.land { animation: none; }
   }
 
   kbd {
@@ -466,7 +488,8 @@
       <div class="games" id="gameboxA"><span class="games-n" id="gamesA">0</span><span class="games-l">JEUX</span></div>
     </div>
 
-    <div class="net" aria-hidden="true"></div>
+    <div class="net" id="net" aria-hidden="true"></div>
+    <div class="volley" aria-hidden="true"><span class="vball" id="vball"></span></div>
 
     <div class="half half-b" id="sideB">
       <div class="plate"><span class="team" id="teamB">EUX</span><span class="sets" id="setsB">0</span></div>
@@ -894,7 +917,7 @@
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
-  var BUILD = 'fd9d479 · 2026-09-05 19:57';
+  var BUILD = '2d37bf4 · 2026-09-05 20:02';
 
   var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
@@ -1022,6 +1045,9 @@
   function addPoint(team) {
     if (match.finished) return;
     cancelConfirm();
+    // La balle de service part d'où elle est maintenant ; on relève sa
+    // position avant que le point ne déplace tout.
+    var depart = baleRect();
     var setsBefore = match.setHistory.length;
     var gamesBefore = match.games[team];
     engine.addPoint(match, team);
@@ -1074,7 +1100,7 @@
     } else {
       var jeuSeul = milestone.titre.indexOf('Jeu ') === 0;
       replay($('side' + cote), jeuSeul ? 'won-game' : 'won-set', ['won-game', 'won-set']);
-      if (!match.finished) replay($('games' + cote), 'pop');
+      celebrer(team, depart, baleRect(), !jeuSeul);
     }
   }
 
@@ -1473,6 +1499,113 @@
       document.body.classList.remove('show-rules');
       start();
     });
+  }
+
+  /* --- le jeu qui bascule --------------------------------------------
+     Une séquence, pas une collection d'effets : la balle quitte le camp qui
+     vient de gagner, franchit le filet — qui frémit à son passage — et se
+     pose là où l'adversaire va servir. Le compteur de jeux bascule ensuite
+     comme un panneau de tableau d'affichage. Chaque temps dit quelque chose
+     de vrai : le service change de camp, le score s'incrémente. */
+  var enVol = [];
+
+  function mouvementReduit() {
+    return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /** Position de la balle de service actuellement visible, s'il y en a une. */
+  function baleRect() {
+    var piste = document.querySelector('.serve.on .ball');
+    return piste ? piste.getBoundingClientRect() : null;
+  }
+
+  function stopVol() {
+    enVol.forEach(function (a) { try { a.cancel(); } catch (e) { /* déjà finie */ } });
+    enVol = [];
+  }
+
+  function celebrer(team, depart, arrivee, estSet) {
+    stopVol();
+    if (mouvementReduit()) return;
+
+    var court = document.querySelector('.court');
+    var cadre = court.getBoundingClientRect();
+    var balle = $('vball');
+    setClass(balle, 'vball', team === 0 ? 'v-a' : 'v-b');
+
+    var duree = estSet ? 820 : 620;
+
+    if (depart && arrivee) {
+      var x0 = depart.left - cadre.left + depart.width / 2 - 8;
+      var y0 = depart.top - cadre.top + depart.height / 2 - 8;
+      var x1 = arrivee.left - cadre.left + arrivee.width / 2 - 8;
+      var y1 = arrivee.top - cadre.top + arrivee.height / 2 - 8;
+      // Bézier quadratique dont le point de contrôle est à mi-chemin : x reste
+      // linéaire, y décrit une vraie parabole. Échantillonnée, elle est lisse
+      // là où trois images-clés donneraient un trajet anguleux.
+      var cx = (x0 + x1) / 2;
+      // Une Bézier quadratique ne culmine qu'à mi-hauteur de son point de
+      // contrôle : pour un arc visible de ~80 px, il faut le placer deux fois
+      // plus haut.
+      var cy = Math.min(y0, y1) - Math.max(170, Math.abs(x1 - x0) * 1.15);
+      var frames = [];
+      var N = 26;
+      for (var i = 0; i <= N; i++) {
+        var t = i / N;
+        var mt = 1 - t;
+        var x = mt * mt * x0 + 2 * mt * t * cx + t * t * x1;
+        var y = mt * mt * y0 + 2 * mt * t * cy + t * t * y1;
+        var echelle = 1 + 0.35 * Math.sin(Math.PI * t);   // plus grosse au sommet
+        frames.push({
+          offset: t,
+          opacity: t < 0.04 ? 0 : t > 0.94 ? 0 : 1,
+          transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)' +
+            ' scale(' + echelle.toFixed(3) + ')' +
+            ' rotate(' + (t * 540).toFixed(0) + 'deg)'
+        });
+      }
+      enVol.push(balle.animate(frames, { duration: duree, easing: 'linear' }));
+
+      // Le filet frémit quand la balle le franchit.
+      var net = $('net');
+      if (net) {
+        enVol.push(net.animate([
+          { transform: 'scaleX(1)', opacity: 1 },
+          { transform: 'scaleX(2.6)', opacity: .75 },
+          { transform: 'scaleX(1)', opacity: 1 }
+        ], { duration: 260, delay: duree * 0.42, easing: 'ease-out' }));
+      }
+    }
+
+    // Le compteur de jeux bascule, comme un panneau qui tombe.
+    var chiffre = $('games' + (team === 0 ? 'A' : 'B'));
+    if (chiffre && !match.finished) {
+      enVol.push(chiffre.animate([
+        { transform: 'perspective(220px) rotateX(-88deg) scale(1.25)', opacity: .2 },
+        { transform: 'perspective(220px) rotateX(12deg) scale(1.12)', opacity: 1, offset: .62 },
+        { transform: 'perspective(220px) rotateX(0deg) scale(1)', opacity: 1 }
+      ], { duration: 460, delay: duree * 0.62, easing: 'cubic-bezier(.2,1.2,.4,1)' }));
+    }
+
+    // Le point retombe à zéro : il se repose au lieu d'apparaître sèchement.
+    ['pointA', 'pointB'].forEach(function (id, i) {
+      enVol.push($(id).animate([
+        { transform: 'scale(.72)', opacity: 0 },
+        { transform: 'scale(1)', opacity: 1 }
+      ], { duration: 320, delay: duree * 0.66 + i * 40, easing: 'cubic-bezier(.2,1.3,.4,1)' }));
+    });
+
+    // Un set qui tombe mérite un temps de plus : la plaque du camp respire.
+    if (estSet) {
+      var plaque = document.querySelector('#side' + (team === 0 ? 'A' : 'B') + ' .plate');
+      if (plaque) {
+        enVol.push(plaque.animate([
+          { transform: 'scale(1)' },
+          { transform: 'scale(1.28)', offset: .4 },
+          { transform: 'scale(1)' }
+        ], { duration: 620, delay: duree * 0.55, easing: 'cubic-bezier(.3,1.4,.4,1)' }));
+      }
+    }
   }
 
   /** Relance une animation. Le recalcul forcé est indispensable : reposer la
