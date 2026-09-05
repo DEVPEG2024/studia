@@ -324,6 +324,20 @@
     if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* ignore */ } }
   }
 
+  // Trace du dernier point : quelle moitié a reçu le toucher, à quelle
+  // abscisse, pour quelle équipe, et le score obtenu. C'est ce qui permet de
+  // distinguer un défaut de zone tactile d'un défaut d'affichage.
+  var lastAction = null;
+
+  function note(ev, zone, team) {
+    lastAction = {
+      zone: zone,
+      x: ev && typeof ev.clientX === 'number' ? Math.round(ev.clientX) : null,
+      largeur: window.innerWidth,
+      team: team
+    };
+  }
+
   function addPoint(team) {
     if (match.finished) return;
     cancelConfirm();
@@ -341,6 +355,11 @@
         ' — sets ' + match.sets[0] + '-' + match.sets[1];
     } else if (match.games[team] > gamesBefore) {
       milestone = 'Jeu ' + who + ' · ' + match.games[0] + '-' + match.games[1];
+    }
+
+    if (lastAction && lastAction.team === team) {
+      lastAction.equipe = match.config.teams[team];
+      lastAction.score = engine.pointLabel(match, 0) + ' | ' + engine.pointLabel(match, 1);
     }
 
     buzz(milestone ? 120 : 25);
@@ -661,6 +680,22 @@
     var rows = [];
 
     rows.push('version        : ' + (BUILD.indexOf('__') === 0 ? 'source (non compilée)' : BUILD));
+    if (lastAction) {
+      rows.push('dernier point  : moitié ' + lastAction.zone +
+        (lastAction.x !== null ? '  x=' + lastAction.x + '/' + lastAction.largeur : '') +
+        '  -> ' + (lastAction.equipe || '?') +
+        '  -> ' + (lastAction.score || '?'));
+    } else {
+      rows.push('dernier point  : aucun depuis le chargement');
+    }
+    // Géométrie réelle des deux moitiés sur l'appareil : si sideA n'est pas
+    // à gauche, l'inversion est une affaire de mise en page, pas de logique.
+    var court = getComputedStyle(document.querySelector('.court'));
+    var ra = $('sideA').getBoundingClientRect();
+    var rb = $('sideB').getBoundingClientRect();
+    rows.push('disposition    : ' + court.flexDirection + ' · ' + court.direction +
+      ' · A=[' + Math.round(ra.left) + ',' + Math.round(ra.right) + ']' +
+      ' B=[' + Math.round(rb.left) + ',' + Math.round(rb.right) + ']');
     rows.push('règles         : ' +
       (rules.goldenPoint ? 'point en or' : 'AVANTAGES') + ' · ' +
       (rules.setsToWin === 2 ? '3 sets' : '1 set') +
@@ -721,8 +756,8 @@
     el.classList.add('tapped');
     setTimeout(function () { el.classList.remove('tapped'); }, 130);
   }
-  $('sideA').addEventListener('click', function () { flash(this); addPoint(0); });
-  $('sideB').addEventListener('click', function () { flash(this); addPoint(1); });
+  $('sideA').addEventListener('click', function (ev) { note(ev, 'GAUCHE', 0); flash(this); addPoint(0); });
+  $('sideB').addEventListener('click', function (ev) { note(ev, 'DROITE', 1); flash(this); addPoint(1); });
   $('btnUndo').addEventListener('click', undo);
   $('btnNew').addEventListener('click', newMatch);
   $('btnSettings').addEventListener('click', function () {
