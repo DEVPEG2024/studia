@@ -801,7 +801,7 @@
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
-  var BUILD = 'a6f7e27 · 2026-09-05 18:32';
+  var BUILD = 'ff27acf · 2026-09-05 19:22';
 
   var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
@@ -923,16 +923,30 @@
     var gamesBefore = match.games[team];
     engine.addPoint(match, team);
 
+    // La carte de notification sur la montre a deux lignes : un titre lu en
+    // premier, un detail dessous. On les separe au lieu de tout empiler.
     var who = match.config.teams[team];
     var milestone = null;
     if (match.finished) {
-      milestone = 'Match ' + who + ' · ' + match.sets[0] + '-' + match.sets[1];
+      milestone = {
+        titre: 'Match ' + who + ' ' + match.sets[0] + '-' + match.sets[1],
+        detail: engine.setSummary(match).join(' · ')
+      };
     } else if (match.setHistory.length > setsBefore) {
       var played = engine.setSummary(match);
-      milestone = 'Set ' + who + ' · ' + played[played.length - 1] +
-        ' — sets ' + match.sets[0] + '-' + match.sets[1];
+      milestone = {
+        titre: 'Set ' + who + ' ' + played[played.length - 1],
+        detail: 'Sets ' + match.sets[0] + '-' + match.sets[1]
+      };
     } else if (match.games[team] > gamesBefore) {
-      milestone = 'Jeu ' + who + ' · ' + match.games[0] + '-' + match.games[1];
+      milestone = {
+        titre: 'Jeu ' + who,
+        // Tant qu'aucun set n'est joue, l'annoncer 0-0 n'apprend rien.
+        detail: 'Jeux ' + match.games[0] + '-' + match.games[1] +
+          (match.sets[0] + match.sets[1] > 0
+            ? ' · Sets ' + match.sets[0] + '-' + match.sets[1]
+            : '')
+      };
     }
 
     if (lastAction && lastAction.team === team) {
@@ -941,7 +955,7 @@
     }
 
     buzz(milestone ? 120 : 25);
-    if (milestone) notify(milestone);
+    if (milestone) notify(milestone.titre, milestone.detail);
     save();
     refresh();
   }
@@ -1091,10 +1105,10 @@
     });
   }
 
-  function notify(body) {
+  function notify(title, body) {
     if (!notifWanted || !swReg || Notification.permission !== 'granted') return;
     try {
-      swReg.showNotification('Padel', {
+      swReg.showNotification(title, {
         body: body,
         tag: 'padel-score',      // une seule notification, remplacee a chaque fois
         renotify: true,          // mais qui redonne l'alerte
@@ -1113,7 +1127,7 @@
   paintRemoteButton();
   if (remoteWanted) startRemote();
   paintDiag();
-      if (notifWanted) notify('Notifications activées');
+      if (notifWanted) notify('Padel', 'Le score arrivera à chaque jeu.');
       return;
     }
     Notification.requestPermission().then(function (result) {
@@ -1123,7 +1137,7 @@
   paintRemoteButton();
   if (remoteWanted) startRemote();
   paintDiag();
-      if (notifWanted) notify('Notifications activées');
+      if (notifWanted) notify('Padel', 'Le score arrivera à chaque jeu.');
     });
   });
 
@@ -1192,13 +1206,25 @@
     var m = match;
     if (!m) return;                    // appelé avant le chargement du match
     var teams = m.config.teams;
+    // L'ecran musique affiche le titre en grand, l'artiste dessous, l'album
+    // parfois. On y range donc le point, puis les jeux et le service, puis
+    // les sets et la phase.
+    var phase = m.finished ? 'Match termine'
+      : m.superTieBreak ? 'Super tie-break'
+      : m.tieBreak ? 'Jeu decisif'
+      : 'Set ' + engine.currentSetNumber(m);
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: m.finished
           ? 'Victoire ' + teams[m.winner]
           : engine.pointLabel(m, 0) + ' - ' + engine.pointLabel(m, 1),
-        artist: teams[0] + ' ' + m.games[0] + ' · ' + m.games[1] + ' ' + teams[1],
-        album: 'Sets ' + m.sets[0] + ' - ' + m.sets[1]
+        artist: m.finished
+          ? engine.setSummary(m).join(' · ')
+          : 'Jeux ' + m.games[0] + '-' + m.games[1] +
+            ' · Service ' + teams[engine.currentServer(m)],
+        album: (m.sets[0] + m.sets[1] > 0
+          ? 'Sets ' + m.sets[0] + '-' + m.sets[1] + ' · '
+          : '') + phase
       });
     } catch (e) { /* metadonnees refusees */ }
   }

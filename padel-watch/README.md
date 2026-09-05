@@ -132,10 +132,12 @@ permet même de choisir app par app — il est réservé à l'Europe.
 Le compteur pousse donc le score **à chaque jeu, set et match** — pas à chaque
 point, qui ferait vibrer le poignet septante fois par match :
 
+La carte de notification d'une montre a deux lignes : un titre lu en premier,
+un détail dessous. Elles sont donc séparées plutôt qu'empilées.
+
 ```
-Padel — Jeu NOUS · 4-3
-Padel — Set NOUS · 6-4 — sets 1-0
-Padel — Match NOUS · 2-1
+Jeu NOUS                    Set NOUS 6-4          Match NOUS 2-1
+Jeux 4-3 · Sets 1-0         Sets 2-0              6-4 · 3-6 · 6-2
 ```
 
 Les notifications portent toutes la même étiquette : la montre en affiche une
@@ -177,10 +179,14 @@ monte.
 En retour, le titre de la lecture en cours porte le score : l'écran musique de
 la montre devient un tableau d'affichage.
 
+L'écran musique montre le titre en grand, l'artiste dessous, l'album parfois.
+On y range donc le point, puis les jeux et le service, puis les sets et la
+phase — le plus utile d'abord sur chaque ligne.
+
 ```
-0 - 15                 (titre)
-NOUS 1 · 0 EUX         (artiste)
-Sets 0 - 0             (album)
+40 - 30                    (titre, en grand)
+Jeux 5-4 · Service EUX     (artiste)
+Sets 1-0 · Set 2           (album)
 ```
 
 À activer par `REGLAGES → Boutons montre (essai)`, puis ouvrir l'écran musique
