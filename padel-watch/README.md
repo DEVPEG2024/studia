@@ -102,6 +102,24 @@ Padel — Match NOUS · 2-1
 Les notifications portent toutes la même étiquette : la montre en affiche une
 seule, remplacée à chaque fois, au lieu d'en empiler quinze.
 
+### Savoir lequel des maillons lâche
+
+`REGLAGES` affiche un diagnostic en direct, mis à jour chaque seconde tant que
+la feuille est ouverte. Chaque ligne est verte quand elle va, orange sinon :
+
+```
+page installée  : oui
+service worker  : actif
+notifications   : actives
+écran allumé    : tenu
+audio           : en lecture
+média montre    : actif — 40 - 30
+```
+
+C'est ce bloc qu'il faut lire quand quelque chose ne marche pas : il distingue
+une permission refusée d'un mode silencieux ou d'une page ouverte depuis Safari
+plutôt que depuis son icône.
+
 ### Marquer depuis la montre (expérimental)
 
 Le sens inverse existe aussi, par un seul canal : **les commandes musique**.

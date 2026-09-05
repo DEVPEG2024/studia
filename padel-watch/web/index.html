@@ -102,6 +102,15 @@
   }
   .rules button[aria-pressed="true"] { border-color: #2ee6a8; color: #2ee6a8; }
   .hint { color: #6b7280; margin: 0; }
+  .diag {
+    margin: 10px 0 0; padding: 10px 12px;
+    background: #0d0f12; border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; line-height: 1.6; color: #9ca3af;
+    white-space: pre; overflow-x: auto;
+  }
+  .diag b { color: #2ee6a8; font-weight: 600; }
+  .diag i { color: #fbbf24; font-style: normal; }
   .sheet-close { display: none; }
 
   /* --- telephone : l'app occupe tout l'ecran, les moities deviennent
@@ -195,6 +204,7 @@
     Clavier : <kbd>&larr;</kbd> ou <kbd>A</kbd> pour NOUS, <kbd>&rarr;</kbd> ou <kbd>P</kbd> pour EUX,
     <kbd>Z</kbd> annuler, <kbd>N</kbd> nouveau match.
   </p>
+  <pre class="diag" id="diag">diagnostic…</pre>
   <button class="sheet-close" id="sheetClose">FERMER</button>
 </div>
 
@@ -393,6 +403,7 @@
   paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
     }, function () {
       // Refus definitif pour cette page : on cesse de demander.
       wakeWanted = false;
@@ -400,6 +411,7 @@
   paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
     });
   }
 
@@ -409,6 +421,7 @@
   paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
   }
 
   document.addEventListener('visibilitychange', function () {
@@ -456,11 +469,13 @@
       paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
     }, function () {
       // file://, page embarquee, pas de HTTPS : on s'en passe silencieusement
       paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
     });
   }
 
@@ -485,6 +500,7 @@
       paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
       if (notifWanted) notify('Notifications activées');
       return;
     }
@@ -494,6 +510,7 @@
       paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
       if (notifWanted) notify('Notifications activées');
     });
   });
@@ -616,6 +633,52 @@
     if (remoteWanted) startRemote(); else stopRemote();
   });
 
+  /* --- diagnostic : dire lequel des maillons lache, plutot que
+         laisser l'utilisateur deviner --- */
+  function diagLine(label, ok, text) {
+    var tag = ok ? 'b' : 'i';
+    return label + ' : <' + tag + '>' + text + '</' + tag + '>';
+  }
+
+  function paintDiag() {
+    var el = $('diag');
+    if (!el) return;
+    var rows = [];
+
+    rows.push(diagLine('page installée ',
+      window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches,
+      window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches
+        ? 'oui' : 'non — ouvrir depuis l’icône'));
+
+    rows.push(diagLine('service worker ', !!swReg, swReg ? 'actif' : 'absent'));
+
+    var perm = ('Notification' in window) ? Notification.permission : 'non géré';
+    rows.push(diagLine('notifications  ',
+      perm === 'granted' && notifWanted,
+      perm === 'granted' ? (notifWanted ? 'actives' : 'accordées, désactivées')
+        : perm === 'denied' ? 'refusées' : perm === 'default' ? 'à demander' : perm));
+
+    rows.push(diagLine('écran allumé   ', !!wakeLock,
+      wakeLock ? 'tenu' : wakeSupported() ? 'non tenu' : 'non géré'));
+
+    var playing = !!silence && !silence.paused && !silence.ended;
+    rows.push(diagLine('audio          ',
+      !remoteWanted || playing,
+      !remoteWanted ? 'inutile (boutons montre off)'
+        : playing ? 'en lecture' : 'arrêté — mode silencieux ?'));
+
+    var meta = remoteSupported() && navigator.mediaSession.metadata;
+    rows.push(diagLine('média montre   ',
+      !remoteWanted || !!meta,
+      !remoteWanted ? 'off' : meta ? 'actif — ' + meta.title : 'inactif'));
+
+    el.innerHTML = rows.join('\n');
+  }
+
+  setInterval(function () {
+    if (document.body.classList.contains('show-rules')) paintDiag();
+  }, 1000);
+
   /* --- reglages hors montre --- */
   function bindRule(id, read, write) {
     var el = $(id);
@@ -643,6 +706,7 @@
   $('btnNew').addEventListener('click', newMatch);
   $('btnSettings').addEventListener('click', function () {
     document.body.classList.toggle('show-rules');
+    paintDiag();
     $('panel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
   $('sheetClose').addEventListener('click', function () {
@@ -668,6 +732,7 @@
   paintNotifButton();
   paintRemoteButton();
   if (remoteWanted) startRemote();
+  paintDiag();
 
   match = load();
   if (match) {
