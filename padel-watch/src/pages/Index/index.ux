@@ -410,6 +410,26 @@ export default {
       this.statusClass = 'st-warn'
       return
     }
+    // Avec les avantages, un point marque par l'un fait retomber l'autre
+    // de AV a 40 : sans libelle, on croit a une inversion des cotes.
+    if (!m.tieBreak && !m.config.goldenPoint) {
+      if (m.points[0] === 4) {
+        this.statusText = 'AVANTAGE ' + m.config.teams[0]
+        this.statusClass = 'st-a'
+        return
+      }
+      if (m.points[1] === 4) {
+        this.statusText = 'AVANTAGE ' + m.config.teams[1]
+        this.statusClass = 'st-b'
+        return
+      }
+      if (m.points[0] === 3 && m.points[1] === 3) {
+        this.statusText = 'EGALITE'
+        this.statusClass = 'st-neutral'
+        return
+      }
+    }
+
     const a = status.teams[0]
     const b = status.teams[1]
     if (!a && !b) {

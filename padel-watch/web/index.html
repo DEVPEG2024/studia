@@ -290,6 +290,13 @@
     } else if (m.changeEnds) {
       text = 'CHANGEMENT DE COTE';
       cls = 'st-warn';
+    } else if (!m.tieBreak && !m.config.goldenPoint &&
+               (m.points[0] === 4 || m.points[1] === 4 || (m.points[0] === 3 && m.points[1] === 3))) {
+      // Avec les avantages, un point marqué par l'un fait retomber l'autre
+      // de AV à 40 : sans libellé, on croit à une inversion des côtés.
+      if (m.points[0] === 4) { text = 'AVANTAGE ' + m.config.teams[0]; cls = 'st-a'; }
+      else if (m.points[1] === 4) { text = 'AVANTAGE ' + m.config.teams[1]; cls = 'st-b'; }
+      else { text = 'ÉGALITÉ'; cls = 'st-neutral'; }
     } else {
       var a = status.teams[0], b = status.teams[1];
       if (a && b) {
