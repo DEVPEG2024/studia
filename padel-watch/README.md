@@ -130,18 +130,59 @@ plusieurs appuis successifs sur le logo ou le numéro de version.
 4. Un message de confirmation apparaît ; **Padel** arrive dans la liste des
    applications de la montre.
 
-### Si le menu Debug n'existe pas
+### Depuis un iPhone
 
-Il est absent de certaines versions, notamment **hors de Chine** et sur
-**iOS** — l'installation d'applications tierces sur les montres Vela est une
-fonction pensée d'abord pour l'application chinoise 小米运动健康, sur Android.
-Deux contournements, tous deux sur Android :
+Le menu Debug n'existe pas sur iOS : l'installation d'applications tierces sur
+les montres Vela n'est outillée que côté Android. Mais la montre n'a pas besoin
+d'être ré-appairée pour autant — et c'est ce qui rend la chose faisable.
 
-- **Gadgetbridge** (libre, F-Droid) : son *App Manager* sait envoyer un `.rpk`
-  aux montres Xiaomi « protobuf ». Support des Redmi Watch encore expérimental,
-  et il faut extraire l'*AuthKey* de l'application officielle.
-- **Outils de la communauté BandBBS** : installation Bluetooth en un clic, avec
-  l'AuthKey lue via Shizuku dans les journaux de Mi Fitness.
+**Ne jamais dissocier la montre.** Le support Xiaomi est explicite : après une
+dissociation, *« la montre est restaurée aux réglages d'usine et toutes les
+données sont effacées »*. Appairer la montre à un Android puis revenir à
+l'iPhone la réinitialiserait deux fois et effacerait l'application. La méthode
+ci-dessous laisse la montre liée à l'iPhone du début à la fin.
+
+#### Étape 1 — récupérer la clé Bluetooth (sur l'ordinateur, sans Android)
+
+Les clés d'appairage sont stockées sur les serveurs Xiaomi. La montre étant
+déjà liée au compte via l'iPhone, la sienne est déjà là :
+
+```bash
+pip install huami-token
+huami-token -m xiaomi -b
+```
+
+L'outil demande l'e-mail et le mot de passe du compte Xiaomi (saisie masquée,
+jamais en argument de ligne de commande), puis liste les appareils liés :
+
+```
+Device 0: Redmi Watch 4
+  MAC: 54:2F:04:A8:54:DD
+  Key: 0x............................
+```
+
+Garder la ligne dont l'adresse MAC est celle de la montre — elle est lisible
+dans Mi Fitness, `À propos de l'appareil`.
+
+> Le paquet est libre et s'adresse directement aux serveurs Xiaomi depuis la
+> machine : les identifiants ne passent par aucun tiers. Éviter les équivalents
+> en ligne, qui demandent le mot de passe du compte à un site inconnu.
+
+#### Étape 2 — installer (n'importe quel Android, une quinzaine de minutes)
+
+Un téléphone emprunté suffit ; il n'est ni appairé à la montre ni lié au
+compte, il sert seulement de radio Bluetooth pilotable.
+
+1. Installer **Gadgetbridge** depuis F-Droid.
+2. Lancer la recherche d'appareils, appui long sur la montre → `Auth key`,
+   y coller la clé de l'étape 1 (`0x…` compris).
+3. Se connecter à la montre.
+4. `App Manager` → installer le fichier `dist/*.rpk` de ce dépôt.
+
+Ce qui peut coincer : le support des Redmi Watch dans Gadgetbridge est marqué
+expérimental, le gestionnaire d'applications RPK y est récent, et je n'ai pas
+trouvé de confirmation pour la Watch 4 précisément. L'étape 1 ne coûte rien et
+se fait tout de suite ; l'étape 2 est celle à tester.
 
 > **Non vérifié sur appareil.** Le projet compile avec la chaîne officielle
 > Xiaomi et produit un `.rpk` Vela signé ; le moteur de score est couvert par
