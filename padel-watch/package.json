@@ -13,7 +13,8 @@
     "release": "aiot release",
     "devices": "aiot getConnectedDevices",
     "web:build": "node tools/build-web.js",
-    "web:artifact": "node tools/build-web.js --artifact --title=\"Compteur Padel\""
+    "web:artifact": "node tools/build-web.js --artifact --title=\"Compteur Padel\"",
+    "doctor": "bash tools/doctor-macos.sh"
   },
   "devDependencies": {
     "aiot-toolkit": "^2.0.5"
