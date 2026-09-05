@@ -3,14 +3,14 @@
  * Genere src/common/logo.png (icone de l'application) sans dependance :
  * une balle de padel sur fond sombre arrondi, dessinee pixel par pixel.
  *
- * Usage : node tools/make-icon.js [taille]
+ * Usage      : node tools/make-icon.js [taille] [fichier de sortie]
+ * Ou requis   : require('./make-icon.js').write(192, '/chemin/icone.png')
  */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const SIZE = Number(process.argv[2]) || 192;
-const OUT = path.join(__dirname, '..', 'src', 'common', 'logo.png');
+const DEFAULT_OUT = path.join(__dirname, '..', 'src', 'common', 'logo.png');
 
 const BG = [11, 13, 16];
 const BALL = [216, 240, 58];
@@ -103,21 +103,36 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
-const ihdr = Buffer.alloc(13);
-ihdr.writeUInt32BE(SIZE, 0);
-ihdr.writeUInt32BE(SIZE, 4);
-ihdr[8] = 8;    // 8 bits par canal
-ihdr[9] = 6;    // RGBA
-ihdr[10] = 0;
-ihdr[11] = 0;
-ihdr[12] = 0;
+function encode(size) {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;    // 8 bits par canal
+  ihdr[9] = 6;    // RGBA
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
 
-const png = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  chunk('IHDR', ihdr),
-  chunk('IDAT', zlib.deflateSync(build(SIZE), { level: 9 })),
-  chunk('IEND', Buffer.alloc(0))
-]);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(build(size), { level: 9 })),
+    chunk('IEND', Buffer.alloc(0))
+  ]);
+}
 
-fs.writeFileSync(OUT, png);
-console.log('icone ecrite : ' + OUT + ' (' + SIZE + 'x' + SIZE + ', ' + png.length + ' octets)');
+function write(size, out) {
+  const png = encode(size);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, png);
+  return png.length;
+}
+
+module.exports = { encode, write };
+
+if (require.main === module) {
+  const size = Number(process.argv[2]) || 192;
+  const out = process.argv[3] || DEFAULT_OUT;
+  const bytes = write(size, out);
+  console.log('icone ecrite : ' + out + ' (' + size + 'x' + size + ', ' + bytes + ' octets)');
+}

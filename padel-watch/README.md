@@ -81,6 +81,55 @@ régler le verrouillage automatique du téléphone sur « Jamais ».
 Clavier : `←`/`A` pour NOUS, `→`/`P` pour EUX, `Z` annuler, `N` nouveau match.
 Le bouton `REGLAGES` ouvre les variantes de règles.
 
+## Le score sur la montre sans installer l'application
+
+La montre n'a pas besoin de l'application pour afficher le score. Appairée à
+l'iPhone, elle reçoit déjà les notifications du téléphone par **ANCS**, un
+service Bluetooth d'Apple qui ne demande aucune application côté téléphone :
+une fois la montre autorisée, tout ce que l'iPhone notifie lui parvient. Depuis
+iOS 26.3, un réglage « Transfert de notifications » dédié aux montres tierces
+permet même de choisir app par app — il est réservé à l'Europe.
+
+Le compteur pousse donc le score **à chaque jeu, set et match** — pas à chaque
+point, qui ferait vibrer le poignet septante fois par match :
+
+```
+Padel — Jeu NOUS · 4-3
+Padel — Set NOUS · 6-4 — sets 1-0
+Padel — Match NOUS · 2-1
+```
+
+Les notifications portent toutes la même étiquette : la montre en affiche une
+seule, remplacée à chaque fois, au lieu d'en empiler quinze.
+
+### Publier la page pour que ça marche
+
+iOS n'autorise les notifications web que depuis une page **ajoutée à l'écran
+d'accueil** et servie **par son propre domaine** en HTTPS. D'où la variante
+installable :
+
+```bash
+npm run web:pwa      # -> docs/ : page + service worker + manifeste + icônes
+```
+
+Le dossier `docs/` est prêt pour GitHub Pages. Côté dépôt, dans
+`Settings → Pages`, choisir `Deploy from a branch`, la branche de travail et le
+dossier `/docs`. Le site sort alors sur `https://<compte>.github.io/studia/`.
+
+Sur l'iPhone : ouvrir cette adresse dans Safari, `Partager → Sur l'écran
+d'accueil`, lancer l'app depuis l'icône, puis `REGLAGES → Notifs montre` pour
+accorder la permission. Le bouton reste masqué là où le navigateur ne le permet
+pas — page locale, page embarquée — plutôt que de promettre dans le vide.
+
+Le service worker met la page en cache : elle démarre et fonctionne sans
+réseau, ce qui est la règle plutôt que l'exception sur un terrain.
+
+> Non testé sur appareil : je n'ai ni iPhone ni montre. Ce que j'ai vérifié en
+> navigateur, c'est que le service worker s'enregistre, que les notifications
+> partent bien au jeu et au set avec le bon libellé, et que la page se sert du
+> cache hors ligne. L'inconnue restante est de savoir si une web app apparaît
+> dans la liste des applications autorisées de Mi Fitness.
+
 ## Construire le `.rpk`
 
 ```bash
