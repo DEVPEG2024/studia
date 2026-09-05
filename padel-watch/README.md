@@ -53,17 +53,24 @@ espacées pour les étiquettes.
 - **Le geste a un retour.** Le point marqué atterrit — un bref rebond du
   chiffre, qui confirme le tap sans qu'on ait à regarder.
 - **Le jeu qui bascule est une séquence, pas un effet.** La balle quitte le
-  camp qui vient de gagner, décrit une parabole au-dessus du terrain, fait
-  frémir le filet à son passage et se pose là où l'adversaire va servir — ce
-  qui vient réellement de se produire, le service change de camp. Le compteur
-  de jeux bascule ensuite comme un panneau de tableau d'affichage, puis les
-  points se reposent à zéro. Un set ajoute un temps : la plaque du camp
-  respire. Tout est coupé si le système demande à réduire les mouvements.
+  camp qui vient de gagner, lobe par-dessus le filet — qui frémit à son
+  passage —, **frappe la vitre du fond**, rebondit et se pose là où
+  l'adversaire va servir : le service vient de changer de camp, et l'animation
+  le raconte. Le choc contre le verre déclenche une onde et une brève secousse
+  du terrain ; suivent le compteur de jeux qui bascule comme un panneau
+  d'affichage, un balayage de lumière sur le camp gagnant, puis les points qui
+  se reposent à zéro. Un set ajoute un temps : la plaque du camp respire.
 
-  La trajectoire est une Bézier quadratique échantillonnée en vingt-six
-  images : le point de contrôle placé à mi-chemin garde une horizontale
-  linéaire et donne à la verticale une vraie parabole. Trois images-clés
-  auraient donné un trajet anguleux.
+  Le rebond sur la vitre est ce qui distingue le padel du tennis — c'est le
+  cœur de l'animation, pas un ornement. La trajectoire est faite de deux
+  Béziers quadratiques échantillonnées en trente images : le point de contrôle
+  à mi-chemin garde l'horizontale linéaire et donne à la verticale une vraie
+  parabole. Mesurée : départ à 65 px, sommet à 79 px de haut au-dessus du
+  filet, vitre à 379 px sur un terrain de 393, retour à 263 px.
+
+  La balle traîne six copies de plus en plus pâles, et porte une couture sans
+  quoi sa rotation serait invisible. Tout est coupé si le système demande à
+  réduire les mouvements.
 - **Annulation point par point**, y compris à travers une fin de jeu ou de set.
 - **Vibration** courte sur un point, longue sur un jeu, un set ou le match.
 - **Écran maintenu allumé** pendant la partie (désactivable).

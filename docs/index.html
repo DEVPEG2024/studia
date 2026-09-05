@@ -116,8 +116,54 @@
     border-top: 2px solid rgba(10, 16, 24, .3);
     border-bottom: 2px solid rgba(10, 16, 24, .3);
   }
-  .vball.v-a { background: var(--ball); box-shadow: 0 0 22px 6px rgba(228, 242, 74, .45); }
-  .vball.v-b { background: var(--glass); box-shadow: 0 0 22px 6px rgba(87, 176, 255, .45); }
+  .vball.v-a { background: var(--ball); box-shadow: 0 0 26px 8px rgba(228, 242, 74, .5); }
+  .vball.v-b { background: var(--glass); box-shadow: 0 0 26px 8px rgba(87, 176, 255, .5); }
+
+  /* La traînée : des copies en retard sur la balle, de plus en plus pâles. */
+  .vghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .vghost.v-a { background: var(--ball); }
+  .vghost.v-b { background: var(--glass); }
+
+  /* L'onde de choc au point d'impact, et l'éclat au départ. */
+  .shock {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .shock.v-a { color: var(--ball); }
+  .shock.v-b { color: var(--glass); }
+
+  /* Le balayage de lumière qui traverse le camp gagnant. En fusion « screen »
+     il ajoute de la lumière au lieu d'en poser par-dessus : sans cela, la
+     bande couvre les chiffres et les assombrit. */
+  .sweep {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 44%;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: screen;
+    will-change: transform, opacity;
+  }
+  .sweep.v-a { background: linear-gradient(102deg, transparent 12%, rgba(228, 242, 74, .16) 48%, transparent 76%); }
+  .sweep.v-b { background: linear-gradient(102deg, transparent 12%, rgba(87, 176, 255, .18) 48%, transparent 76%); }
 
   .half {
     position: relative;
@@ -489,7 +535,12 @@
     </div>
 
     <div class="net" id="net" aria-hidden="true"></div>
-    <div class="volley" aria-hidden="true"><span class="vball" id="vball"></span></div>
+    <div class="volley" id="volley" aria-hidden="true">
+      <span class="sweep" id="sweep"></span>
+      <span class="shock" id="shockA"></span>
+      <span class="shock" id="shockB"></span>
+      <span class="vball" id="vball"></span>
+    </div>
 
     <div class="half half-b" id="sideB">
       <div class="plate"><span class="team" id="teamB">EUX</span><span class="sets" id="setsB">0</span></div>
@@ -917,7 +968,7 @@
   var BALL_RANK = { game: 1, set: 2, match: 3 };
   var STORAGE_KEY = 'padel.web.v1';
   // Remplacé à la compilation ; reste tel quel quand on sert web/ directement.
-  var BUILD = '2d37bf4 · 2026-09-05 20:02';
+  var BUILD = 'd785819 · 2026-09-05 20:10';
 
   var rules = { goldenPoint: false, superTieBreak: false, setsToWin: 2 };
   var match = null;
@@ -1524,86 +1575,178 @@
     enVol = [];
   }
 
+  /** Trajectoire d'une balle de padel : elle monte, redescend, frappe la
+      vitre du fond puis rebondit avant de se poser. C'est ce rebond sur le
+      verre qui distingue ce sport du tennis ; l'animation le raconte. */
+  function trajet(x0, y0, x1, y1, mur, sol) {
+    var points = [];
+    var arc = function (ax, ay, bx, by, haut, n, depuis) {
+      for (var i = depuis; i <= n; i++) {
+        var t = i / n;
+        var mt = 1 - t;
+        var cx = (ax + bx) / 2;
+        var cy = Math.min(ay, by) - haut;
+        points.push({
+          x: mt * mt * ax + 2 * mt * t * cx + t * t * bx,
+          y: mt * mt * ay + 2 * mt * t * cy + t * t * by
+        });
+      }
+    };
+    // Aller : du camp gagnant jusqu'à la vitre du fond.
+    arc(x0, y0, mur, sol, Math.max(170, Math.abs(mur - x0) * 1.15), 17, 0);
+    // Rebond : plus court, plus bas, vers l'emplacement de service adverse.
+    arc(mur, sol, x1, y1, Math.max(95, Math.abs(x1 - mur) * 0.95), 13, 1);
+    return points;
+  }
+
+  function imagesDe(points, tailleMax) {
+    var frames = [];
+    var n = points.length - 1;
+    for (var i = 0; i <= n; i++) {
+      var t = i / n;
+      var echelle = 1 + (tailleMax - 1) * Math.sin(Math.PI * Math.min(t * 1.6, 1));
+      frames.push({
+        offset: t,
+        opacity: t < 0.03 ? 0 : t > 0.97 ? 0 : 1,
+        transform: 'translate(' + points[i].x.toFixed(1) + 'px,' + points[i].y.toFixed(1) + 'px)' +
+          ' scale(' + echelle.toFixed(3) + ')' +
+          ' rotate(' + (t * 900).toFixed(0) + 'deg)'
+      });
+    }
+    return frames;
+  }
+
+  /** Crée une fois pour toutes les copies qui composent la traînée. */
+  function fantomes() {
+    var deja = document.querySelectorAll('.vghost');
+    if (deja.length) return deja;
+    var calque = $('volley');
+    var balle = $('vball');
+    for (var i = 0; i < 6; i++) {
+      var g = document.createElement('span');
+      g.className = 'vghost';
+      calque.insertBefore(g, balle);
+    }
+    return document.querySelectorAll('.vghost');
+  }
+
+  function onde(el, x, y, taille, duree, retard) {
+    el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    return el.animate([
+      { transform: 'translate(' + x + 'px,' + y + 'px) scale(.3)', opacity: .9, borderWidth: '3px' },
+      { transform: 'translate(' + x + 'px,' + y + 'px) scale(' + taille + ')', opacity: 0, borderWidth: '1px' }
+    ], { duration: duree, delay: retard, easing: 'cubic-bezier(.15,.8,.3,1)' });
+  }
+
   function celebrer(team, depart, arrivee, estSet) {
     stopVol();
     if (mouvementReduit()) return;
 
     var court = document.querySelector('.court');
     var cadre = court.getBoundingClientRect();
+    var teinte = team === 0 ? 'v-a' : 'v-b';
     var balle = $('vball');
-    setClass(balle, 'vball', team === 0 ? 'v-a' : 'v-b');
+    var vol = estSet ? 780 : 640;
+    setClass(balle, 'vball', teinte);
 
-    var duree = estSet ? 820 : 620;
+    if (!depart || !arrivee) return;
 
-    if (depart && arrivee) {
-      var x0 = depart.left - cadre.left + depart.width / 2 - 8;
-      var y0 = depart.top - cadre.top + depart.height / 2 - 8;
-      var x1 = arrivee.left - cadre.left + arrivee.width / 2 - 8;
-      var y1 = arrivee.top - cadre.top + arrivee.height / 2 - 8;
-      // Bézier quadratique dont le point de contrôle est à mi-chemin : x reste
-      // linéaire, y décrit une vraie parabole. Échantillonnée, elle est lisse
-      // là où trois images-clés donneraient un trajet anguleux.
-      var cx = (x0 + x1) / 2;
-      // Une Bézier quadratique ne culmine qu'à mi-hauteur de son point de
-      // contrôle : pour un arc visible de ~80 px, il faut le placer deux fois
-      // plus haut.
-      var cy = Math.min(y0, y1) - Math.max(170, Math.abs(x1 - x0) * 1.15);
-      var frames = [];
-      var N = 26;
-      for (var i = 0; i <= N; i++) {
-        var t = i / N;
-        var mt = 1 - t;
-        var x = mt * mt * x0 + 2 * mt * t * cx + t * t * x1;
-        var y = mt * mt * y0 + 2 * mt * t * cy + t * t * y1;
-        var echelle = 1 + 0.35 * Math.sin(Math.PI * t);   // plus grosse au sommet
-        frames.push({
-          offset: t,
-          opacity: t < 0.04 ? 0 : t > 0.94 ? 0 : 1,
-          transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)' +
-            ' scale(' + echelle.toFixed(3) + ')' +
-            ' rotate(' + (t * 540).toFixed(0) + 'deg)'
-        });
-      }
-      enVol.push(balle.animate(frames, { duration: duree, easing: 'linear' }));
+    var x0 = depart.left - cadre.left + depart.width / 2 - 8;
+    var y0 = depart.top - cadre.top + depart.height / 2 - 8;
+    var x1 = arrivee.left - cadre.left + arrivee.width / 2 - 8;
+    var y1 = arrivee.top - cadre.top + arrivee.height / 2 - 8;
+    // La vitre du fond, du côté vers lequel la balle part.
+    var versDroite = x1 > x0;
+    var mur = versDroite ? cadre.width - 14 : 2;
+    var sol = Math.min(cadre.height - 26, Math.max(y0, y1) + cadre.height * 0.22);
 
-      // Le filet frémit quand la balle le franchit.
-      var net = $('net');
-      if (net) {
-        enVol.push(net.animate([
-          { transform: 'scaleX(1)', opacity: 1 },
-          { transform: 'scaleX(2.6)', opacity: .75 },
-          { transform: 'scaleX(1)', opacity: 1 }
-        ], { duration: 260, delay: duree * 0.42, easing: 'ease-out' }));
-      }
+    var points = trajet(x0, y0, x1, y1, mur, sol);
+    var frames = imagesDe(points, 1.45);
+    enVol.push(balle.animate(frames, { duration: vol, easing: 'linear' }));
+
+    // La traînée suit, en retard et de plus en plus pâle.
+    var suite = fantomes();
+    for (var i = 0; i < suite.length; i++) {
+      var g = suite[i];
+      setClass(g, 'vghost', teinte);
+      var pales = frames.map(function (f, k) {
+        return {
+          offset: f.offset,
+          opacity: k < 3 ? 0 : (0.42 - i * 0.06),
+          transform: f.transform.replace(/scale\(([\d.]+)\)/, function (all, v) {
+            return 'scale(' + (parseFloat(v) * (0.82 - i * 0.09)).toFixed(3) + ')';
+          })
+        };
+      });
+      enVol.push(g.animate(pales, { duration: vol, delay: 26 + i * 24, easing: 'linear' }));
     }
 
-    // Le compteur de jeux bascule, comme un panneau qui tombe.
+    // Le filet frémit quand la balle le franchit, à l'aller comme au retour.
+    var net = $('net');
+    if (net) {
+      [0.30, 0.78].forEach(function (part) {
+        enVol.push(net.animate([
+          { transform: 'scaleX(1)', opacity: 1 },
+          { transform: 'scaleX(3)', opacity: .7 },
+          { transform: 'scaleX(1)', opacity: 1 }
+        ], { duration: 240, delay: vol * part, easing: 'ease-out' }));
+      });
+    }
+
+    // L'éclat au départ, le choc contre la vitre, l'onde à l'arrivée.
+    var eclat = $('shockA');
+    var impact = $('shockB');
+    setClass(eclat, 'shock', teinte);
+    setClass(impact, 'shock', teinte);
+    enVol.push(onde(eclat, x0 + 8, y0 + 8, 3.4, 480, 0));
+    enVol.push(onde(impact, mur + 8, sol + 8, 5.2, 560, vol * 0.55));
+
+    // La secousse du terrain : brève, quelques pixels. C'est elle qui donne
+    // le poids de l'impact ; au-delà, elle ferait pacotille.
+    enVol.push(court.animate([
+      { transform: 'translate(0,0)' },
+      { transform: 'translate(' + (versDroite ? -4 : 4) + 'px, 2px)' },
+      { transform: 'translate(' + (versDroite ? 3 : -3) + 'px, -2px)' },
+      { transform: 'translate(0,0)' }
+    ], { duration: 170, delay: vol * 0.55, easing: 'ease-out' }));
+
+    // Le balayage de lumière traverse le camp gagnant.
+    var balayage = $('sweep');
+    setClass(balayage, 'sweep', teinte);
+    balayage.style.left = team === 0 ? '0' : '54%';
+    enVol.push(balayage.animate([
+      { transform: 'translateX(-120%)', opacity: 0 },
+      { transform: 'translateX(-20%)', opacity: 1, offset: .35 },
+      { transform: 'translateX(120%)', opacity: 0 }
+    ], { duration: estSet ? 780 : 620, delay: vol * 0.6, easing: 'cubic-bezier(.3,.7,.4,1)' }));
+
+    // Le compteur de jeux bascule au moment du choc.
     var chiffre = $('games' + (team === 0 ? 'A' : 'B'));
     if (chiffre && !match.finished) {
       enVol.push(chiffre.animate([
-        { transform: 'perspective(220px) rotateX(-88deg) scale(1.25)', opacity: .2 },
-        { transform: 'perspective(220px) rotateX(12deg) scale(1.12)', opacity: 1, offset: .62 },
+        { transform: 'perspective(220px) rotateX(-92deg) scale(1.35)', opacity: .15 },
+        { transform: 'perspective(220px) rotateX(14deg) scale(1.16)', opacity: 1, offset: .6 },
         { transform: 'perspective(220px) rotateX(0deg) scale(1)', opacity: 1 }
-      ], { duration: 460, delay: duree * 0.62, easing: 'cubic-bezier(.2,1.2,.4,1)' }));
+      ], { duration: 500, delay: vol * 0.62, easing: 'cubic-bezier(.2,1.25,.35,1)' }));
     }
 
-    // Le point retombe à zéro : il se repose au lieu d'apparaître sèchement.
+    // Les points se reposent à zéro.
     ['pointA', 'pointB'].forEach(function (id, i) {
       enVol.push($(id).animate([
-        { transform: 'scale(.72)', opacity: 0 },
+        { transform: 'scale(.7)', opacity: 0 },
         { transform: 'scale(1)', opacity: 1 }
-      ], { duration: 320, delay: duree * 0.66 + i * 40, easing: 'cubic-bezier(.2,1.3,.4,1)' }));
+      ], { duration: 340, delay: vol * 0.66 + i * 50, easing: 'cubic-bezier(.2,1.35,.4,1)' }));
     });
 
-    // Un set qui tombe mérite un temps de plus : la plaque du camp respire.
+    // Un set qui tombe mérite un temps de plus.
     if (estSet) {
       var plaque = document.querySelector('#side' + (team === 0 ? 'A' : 'B') + ' .plate');
       if (plaque) {
         enVol.push(plaque.animate([
           { transform: 'scale(1)' },
-          { transform: 'scale(1.28)', offset: .4 },
+          { transform: 'scale(1.32)', offset: .4 },
           { transform: 'scale(1)' }
-        ], { duration: 620, delay: duree * 0.55, easing: 'cubic-bezier(.3,1.4,.4,1)' }));
+        ], { duration: 680, delay: vol * 0.62, easing: 'cubic-bezier(.3,1.5,.4,1)' }));
       }
     }
   }
